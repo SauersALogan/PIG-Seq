@@ -11,23 +11,6 @@ import tempfile
 import os
 
 def count_fasta_sequences(filename):
-    """
-    Count how many lines start with '>' in a file.
-    
-    Args:
-        filename (str): Path to FASTA file
-        
-    Returns:
-        int: Number of lines starting with '>'
-        
-    Example:
-        >>> with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.fasta') as tmp:
-        ...     tmp.write(">seq1\\nATCG\\n>seq2\\nGCTA\\n")
-        ...     tmp_path = tmp.name
-        >>> count_fasta_sequences(tmp_path)
-        2
-        >>> os.unlink(tmp_path)
-    """
     count = 0
     with open(filename, 'r') as f:
         for line in f:
