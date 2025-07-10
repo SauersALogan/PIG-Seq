@@ -1,0 +1,16 @@
+# Technical note
+This repository has two primary goals:
+  1) Expand my dev-ops knowledge with both python (using TDD in py.test) and to learn good practice with github dev-ops. 
+  2) Develop scripts related to my paired immunologlobulin sequencing technique which provides custom scripts for high quality 
+read mapping of paired metagenomic and metatranscriptomic data to sample specific metagenomic assemblies, then maps contigs from these assemblies to
+specific metagenomic bins and unbinned contigs. The ultimate output is to hopefully acquire accurate cpm estimates for each gene within binned metagenomes and 
+the remaining unbinned metagenomic assembly. 
+
+For test driven developement I will follow the steps below:
+  1) I will create test files for core scripts, due to the complex nature and differing requirements not all functions will be within the same script. 
+    Technical note, this is essentially an overarching guide that will serve as both a roadmap and an integration test script
+  2) These test files will be named with the convention test_XXX.py 
+  3) Functions will be saved as function_name.py in the developement folder while developing and before integrating into the integration test
+  4) The main script will be saved in the source folder (src) XXX.py
+
+For github based development
