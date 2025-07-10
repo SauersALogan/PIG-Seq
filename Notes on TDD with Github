@@ -13,4 +13,21 @@ For test driven developement I will follow the steps below:
   3) Functions will be saved as function_name.py in the developement folder while developing and before integrating into the integration test
   4) The main script will be saved in the source folder (src) XXX.py
 
-For github based development
+For github based development:
+
+Architecture:
+metagenomics-pipeline/
+├── test_integration.py           # Master file!
+│   ├── Function stubs (TODO)
+│   ├── Individual function tests 
+│   └── Integration tests
+├── individual_functions/          # Development area
+│   ├── count_sequences.py        
+│   ├── parse_paf.py             
+│   └── build_commands.py
+└── src/                          # Only when complete!
+    ├── fasta_utils.py           # Production code
+    ├── alignment.py
+    └── pipeline.py
+
+A CI/CD approach will be used by working with the tests.yml file
