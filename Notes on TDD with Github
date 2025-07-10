@@ -13,6 +13,119 @@ For test driven developement I will follow the steps below:
   3) Functions will be saved as function_name.py in the developement folder while developing and before integrating into the integration test
   4) The main script will be saved in the source folder (src) XXX.py
 
+The basic TDD workflow would be as follows:
+============================
+1. Identify the need
+   - What problem are you solving?
+   - What would make your pipeline better?
+
+2. Write the function signature 
+   - What inputs does it need?
+   - What should it return?
+   - What could go wrong?
+
+3. Write the tests
+   - Happy path (normal usage)
+   - Edge cases (empty inputs, boundary conditions)
+   - Error cases (invalid inputs, file problems)
+
+4. Impliment to pass tests
+   - Start simple
+   - Add complexity gradually
+   - Refactor when tests pass
+
+#################################################################################################
+# As an example for setting up python TDD scripts
+#################################################################################################
+#################################################################################################
+# Setup function requirements, and TODO, TODO gets replaced by actual function when it is ready
+#################################################################################################
+
+def function_name(input):
+    """ Description of the function.
+    
+    TODO
+    
+    Arguments (Args):
+        input (string) the location of an input file
+
+    Returns:
+        Returns the number of lines starting with >
+
+    Raises:
+        # Instances to raise/call when some condition is met, good for error checking!
+"""
+
+#######################################################################################
+# Tests
+#######################################################################################
+
+def test_1():
+    """ First test scenario."""
+    content = """ Whatever relevant content the file would need """
+
+   with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.fasta') as tmp:
+        tmp.write(content)
+        tmp_path = tmp.name
+    
+    try:
+        result = function_name # function created above
+        assert result == {some condition} f"Expected {some condition}, got {result}" # General syntax for reporting and testing
+        print("✅ test_count_three_sequences passed")
+    # Use finally and os.unlink(tmp_path) to remove/delete the temporary file
+    finally:
+        os.unlink(tmp_path)
+
+    # Finally let's make a function to run all the tests
+    def run_all_tests():
+        """Run all tests for the function."""
+        print("Running tests for function_name")
+        print("=" * 50)
+
+        tests = [ 
+            test_1
+        ]
+
+        passed = 0
+        failed = 0
+
+        for test_func in tests:
+            try:
+                test_func()
+                passed += 1
+            except Exception as e:
+                print(f"❌ {test_func.__name__} failed: {e}")
+                failed += 1
+
+        print("=" * 50)
+        print(f"Results: {passed} passed, {failed} failed")
+
+        if failed == 0:
+            print("All tests passed! Function is ready for integration.")
+            return True
+        else:
+            print("💥 Some tests failed. Fix the function before integration.")
+            return False
+
+if __name__ == "__main__":
+    # Run tests when file is executed directly
+    success = run_all_tests()
+    
+    if success:
+        print("\n" + "=" * 50)
+        print("FUNCTION READY FOR INTEGRATION!")
+        print("=" * 50)
+        print("You can now:")
+        print("1. Import this function in integration_test.py")
+        print("2. Uncomment the relevant integration tests")
+        print("3. Run: pytest integration_test.py -v")
+    else:
+        exit(1)
+
+#######################################################################################
+# End of Mock TDD script example
+#######################################################################################
+
 For github based development:
 
 Architecture:
