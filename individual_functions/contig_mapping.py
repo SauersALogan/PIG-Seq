@@ -16,19 +16,33 @@ import subprocess # Needed to run external command sin python
 # Actual functions to test
 # =============================================================================
 
-def build_minimap2_command():
-        try:
-            # TODO: Uncomment when functions are ready
-            # Step 1: Build minimap command with subprocess            
+def build_minimap2_command(assembly_file, bin_files):
+    """"Build the minimap2 command as a list - Need run_alignment to execute."""
+    output_paf = "alignment_output.paf"
+
+    cmd = [ 
+        "minimap2",
+        "-x", "asm5", 
+        "-o", output_paf, 
+    ]
+
+    if isinstance(bin_files, list): 
+        cmd.extend(bin_files) 
+    else: 
+        cmd.append(bin_files)
+
+    return cmd, output_paf
 
 def run_alignment(assembly_file, bin_files):
     """Run minimap2 alignment and return PAF files"""
-			# TODO: Uncomment when functions are ready
-            # Step 1: Build minimap command for similar analysis
-            # cmd = build_minimap_command("bins.fa", "assembly.fa")
-            # assert "minimap2" in cmd, "Command should contain minimap2"
-            # assert "bins.fa" in cmd and "assembly.fa" in cmd, "Files should be in command"
-    return "output.paf"
+    try:
+        cmd, output_paf = build_minimap2_command(assembly_file, bin_files)
+        results = subprocess.run(cmd, check=True)
+        return output_paf
+
+    except subprocess.CalledProcessError:
+        print("Minimap2 alignment failed")
+        return None
 
 # =============================================================================
 # Create the mock data for testing
