@@ -62,10 +62,13 @@ def multiple_assemblies():
     >contig4 length=600
     AAAAGGGGCCCCTTTTAAAAGGGGCCCCTTTTAAAAGGGGCCCCTTTTAAAAGGGGCCCCTTTT
     """
-    
-    with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.fasta') as tmp:
-        tmp.write(content)
-        return tmp.name
+
+    assembly_files = []
+    for i, content in enumerate([assembly_1_content, assembly_2_content, assembly_3_content], 1)
+        with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix=f'_assembly{i}.fasta') as tmp:
+            tmp.write(content)
+            assembly_files.append(tmp.name)
+    return assembly_files
 
 # Need mock bin files
 @pytest.fixture
@@ -88,7 +91,6 @@ def sample_bins():
         with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix=f'_bin{i}.fasta') as tmp:
             tmp.write(content)
             bin_files.append(tmp.name)
-    
     return bin_files
 
 # =============================================================================
@@ -98,7 +100,7 @@ def sample_bins():
 class TestAlignmentWorkflow:
     """Test alignment processing workflow."""
     
-    def test_contig_mapping_workflow(self, multiple_assemblies, sample_bins. tmp_path):
+    def test_contig_mapping_workflow(self, multiple_assemblies, sample_bins, tmp_path):
         try:
             # TODO: Uncomment when functions are ready
             # Step 1: Build minimap command for similar analysis
