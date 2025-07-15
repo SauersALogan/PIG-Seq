@@ -21,25 +21,19 @@ def build_minimap2_command(assembly, bin, output_path):
     aligner = [ 
         "minimap2",
         "-x", "asm5",
-        assembly, bin
+        assembly, bin,
         "-o", output_path
     ]
-    if isinstance(bin, list): 
-        aligner.extend(bin) 
-    else: 
-        aligner.append(bin)
-    return aligner, output_path
-
+    
 def run_alignment(assembly, bin_files, output_path):
     """Run minimap2 alignment and return PAF files"""
-    for bin in bin_files:
-        try:
-            aligner = build_minimap2_command(assembly, bin, output_path)
-            result = subprocess.run(aligner, check=True)
-            return output_path
-        except subprocess.CalledProcessError:
-            print("Minimap2 alignment failed for {assembly_file}")
-            return None
+    try:
+        aligner = build_minimap2_command(assembly, bin, output_path)
+        result = subprocess.run(aligner, check=True)
+        return output_path
+    except subprocess.CalledProcessError:
+        print("Minimap2 alignment failed for {assembly_file}")
+        return None
 
 # =============================================================================
 # Create the mock data for testing
@@ -138,8 +132,7 @@ def test_single_assembly_alignment(single_assembly, ):
     assert os.path.getsize(output_path) > 0, "PAF file should not be empty"
 
 def test_multiple_assemblies(multiple_assemblies, sample_bins):
-    result = []
-    for assembly in multiple_assemblies:
+        for assembly in multiple_assemblies:
         paf_file = run_alignment(assembly, sample_bins)
         assert os.path.exists(output_path), "PAF file should be created"
         assert os.path.getsize(output_path) > 0, "PAF file should not be empty"
@@ -149,9 +142,9 @@ if __name__ == "__main__":
     for assembly in assembly_files:
         for bin in bin_files:
             assembly_base=os.path.basename(assembly)
-            assembly_name=os.path.splitext(assembly_name)[0]
+            assembly_name=os.path.splitext(assembly_base)[0]
             bin_base=os.path.basename(bin)
-            bin_name=os.path.splitext(bin_name)
+            bin_name=os.path.splitext(bin_base)[0]
             output_name=assembly_name+"_"+bin_name+".paf"
             output_path=(output_name)
     success = run_all_tests()
