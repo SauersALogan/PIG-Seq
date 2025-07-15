@@ -127,8 +127,8 @@ def sample_bins():
 
 def test_single_assembly(single_assembly, sample_bins):
     """Test that minimap2 actually runs and produces output on a single assembly"""
-    for assembly in assembly_files:
-        for bin in bin_files:
+    for assembly in single_assembly:
+        for bin in sample_bins:
             assembly_base=os.path.basename(assembly)
             assembly_name=os.path.splitext(assembly_base)[0]
             bin_base=os.path.basename(bin)
@@ -141,15 +141,15 @@ def test_single_assembly(single_assembly, sample_bins):
 
 def test_multiple_assemblies(multiple_assemblies, sample_bins):
     """Test that minimap2 runs and produces proper output with multiple assemblies"""
-    for assembly in assembly_files:
-        for bin in bin_files:
+    for assembly in multiple_assemblies:
+        for bin in sample_bins:
             assembly_base=os.path.basename(assembly)
             assembly_name=os.path.splitext(assembly_base)[0]
             bin_base=os.path.basename(bin)
             bin_name=os.path.splitext(bin_base)[0]
             output_name=assembly_name+"_"+bin_name+".paf"
             output_path=(output_name)
-            results = run_alignment(assembly, sample_bins, output_path)
+            results = run_alignment(assembly, bin, output_path)
             assert os.path.exists(results), "PAF file should be created"
             assert os.path.getsize(results) > 0, "PAF file should not be empty"
 
