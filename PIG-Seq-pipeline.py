@@ -36,6 +36,7 @@ def build_minimap2_command(assembly_files, bin_files):
 
 def run_alignment(assembly_files, bin_files):
     """Run minimap2 alignment and return PAF files"""
+    try:
         aligner, output_paf = build_minimap2_command(assembly_files, bin_files)
         output_paf = subprocess.run(aligner, check=True)
         return output_path
