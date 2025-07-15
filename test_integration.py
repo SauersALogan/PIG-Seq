@@ -140,27 +140,30 @@ class TestPAFParsing:
 # =============================================================================
 class TestFullPipeline:
     def complete_pipeline():
+       """
+       Test to check if we're ready for integration testing.
+       This test checks if individual functions can be imported.
+       """
+       # TODO: Uncomment as individual functions are completed
+
+       # Step 1: Align
+       def is_valid_paf(result):
+            return result and os.path.exists(result) and os.path.getsize(result) > 0 
+
        pipeline_results = []
-        """
-        Test to check if we're ready for integration testing.
-        This test checks if individual functions can be imported.
-        """
-        # TODO: Uncomment as individual functions are completed
 
-        # Step 1: Align
+       for assembly in multiple_assemblies:
+           for bin in sample_bins:
+               assembly_base=os.path.basename(assembly)
+               assembly_name=os.path.splitext(assembly_base)[0]
+               bin_base=os.path.basename(bin)
+               bin_name=os.path.splitext(bin_base)[0]
+               output_name=assembly_name+"_"+bin_name+".paf"
+               output_path=(output_name)
+               result = run_alignment(assembly, bin, output_path)
+               pipeline_results.append(result)
 
-        for assembly in multiple_assemblies:
-            for bin in sample_bins:
-                assembly_base=os.path.basename(assembly)
-                assembly_name=os.path.splitext(assembly_base)[0]
-                bin_base=os.path.basename(bin)
-                bin_name=os.path.splitext(bin_base)[0]
-                output_name=assembly_name+"_"+bin_name+".paf"
-                output_path=(output_name)
-                result = run_alignment(assembly, bin, output_path)
-                pipeline_results.append(result)
-
-    assert any(is_valid_paf(r) for r in results), "At least one PAF file should be created and not empty" result = run_alignment(multiple_assemblies[0], sample_bins[0], str(paf_file))
+    assert any(is_valid_paf(r) for r in pipeline_results), "At least one PAF file should be created and not empty"
 
         # Step 2: Parse
 
