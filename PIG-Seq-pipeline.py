@@ -40,9 +40,9 @@ def build_minimap2_command(assembly_files, bin_files):
 def run_alignment(assembly_files, bin_files):
     """Run minimap2 alignment and return PAF files"""
     try:
-        aligner, output_paf = build_minimap2_command(assembly_files, bin_files)
-        results = subprocess.run(cmd, check=True)
-        return output_paf
+        aligner, output = build_minimap2_command(assembly_files, bin_files)
+        output = subprocess.run(cmd, check=True)
+        return output
     except subprocess.CalledProcessError:
         print("Minimap2 alignment failed")
         return None
@@ -93,10 +93,8 @@ if __name__ == "__main__":
         output_name=name+".paf"
         output=os.path.join(args.output, output_name)
         output = run_alignment(assembly, bin_files)
-
-    if results:
-        print(f"Processing completed successfuly. Output: {results}"
-        exit(0)
-    else:
-        print("Processing failed")
-        exit(1)
+        if output:
+            print(f"Processing completed successfully, output {output}")
+        else:
+            print("Processing failed for {assembly}")
+            exit(1)
