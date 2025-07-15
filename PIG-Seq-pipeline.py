@@ -15,7 +15,7 @@ import glob
 # Constants
 ##################################################################################
 
-
+output_paf = 
 
 ##################################################################################
 # Core Logic
@@ -23,7 +23,6 @@ import glob
 
 def build_minimap2_command(assembly_files, bin_files):
     """"Build the minimap2 command as a list - Need run_alignment to execute."""
-    output_paf = "alignment_output.paf"
 
     cmd = [ 
         "minimap2",
@@ -54,10 +53,10 @@ def run_alignment(assembly_files, bin_files):
 ##################################################################################
 
 parser = argparse.ArgumentParser(description="Script for processing contigs from assemblies and splitting into binned and unbinned sets")
-
 parser.add_argument("--assemblies", nargs="+", required=True, help="The assembly files")
 parser.add_argument("--bins", nargs="+", required=True, help="The bin files")
 parser.add_argument("--output", required=True, help="Output path file")
+args = parser.parse_args()
 
 # Expand the wildcard
 assembly_files=[]
@@ -92,5 +91,4 @@ else:
 # Entry Point
 ##################################################################################
 
-if __name__ == "__main__":
-    args = parser.parse_args()
+if __name__ == "__main__"
