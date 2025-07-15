@@ -62,7 +62,7 @@ def multiple_assemblies():
     """
 
     assembly_files = []
-    for i, content in enumerate([assembly_1_content, assembly_2_content, assembly_3_content], 1)
+    for i, content in enumerate([assembly_1_content, assembly_2_content, assembly_3_content], 1):
         with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix=f'_assembly{i}.fasta') as tmp:
             tmp.write(content)
             assembly_files.append(tmp.name)
@@ -92,31 +92,34 @@ def sample_bins():
     return bin_files
 
 # =============================================================================
+# Import the functions from the individual_functions folder
+# =============================================================================
+from individual_functions.contig_mapping import build_minimap2_command, run_alignment
+
+# =============================================================================
 # Integration test - Test functions working together
 # =============================================================================
 
 class TestAlignmentWorkflow:
     """Test alignment processing workflow."""
 
-    def build_minimap2_command(assembly, bin, output_path):
-    """"Build the minimap2 command as a list - Need run_alignment to execute."""
-        aligner = [ 
-            "minimap2",
-            "-x", "asm5",
-            assembly, bin,
-            "-o", output_path
-        ]
-    return aligner
-
-    def run_alignment(assembly, bin, output_path):
-        """Run minimap2 alignment and return PAF files"""
-        try:
-            aligner = build_minimap2_command(assembly, bin, output_path)
-            result = subprocess.run(aligner, check=True)
-            return output_path
-        except subprocess.CalledProcessError:
-            print("Minimap2 alignment failed for {assembly}")
-            return None
+    def test_alignment(self, multiple_assemblies, sample_bins):
+        """Test that minimap2 runs and produces proper output with multiple assemblies"""
+        def is_valid_paf(result):
+            return result and os.path.exists(result) and os.path.getsize(result) > 0
+    
+        results = []
+        for assembly in multiple_assemblies:
+            for bin in sample_bins:
+                assembly_base=os.path.basename(assembly)
+                assembly_name=os.path.splitext(assembly_base)[0]
+                bin_base=os.path.basename(bin)
+                bin_name=os.path.splitext(bin_base)[0]
+                output_name=assembly_name+"_"+bin_name+".paf"
+                output_path=(output_name)
+                result = run_alignment(assembly, bin, output_path)
+                results.append(result)
+        assert any(is_valid_paf(r) for r in results), "At least one PAF file should be created and not empty"
 
 class TestPAFParsing:
     """"test the PAF parsing workflow."""
@@ -132,52 +135,35 @@ class TestPAFParsing:
             # Need to match these names to the query contig names for good alignments
             # Need to collect contigs with no good alignments into a new file
 
-        #finally:
-            #os.unlink(tmp_path)
-
-            # SUCCESS CRITERIA
-            # print(f"✅ Pipeline Success:")
-            # print(f"   Assembly sequences: {assembly_count}")
-            # print(f"   Bin sequences: {total_bin_sequences}")
-            # print(f"   Aligned contigs: {len(aligned_contigs)}")
-            # print(f"   Unbinned contigs: {len(unbinned_contigs)}")
-            # print(f"   Unbinned contig names: {list(unbinned_contigs)}")
-            
-            # For now, just pass
-            #assert True, "Full pipeline placeholder - THE ULTIMATE GOAL!"
-            
-        #finally:
-            #os.unlink(multiple_assemblies)
-            #for bin_file in sample_bins:
-                #os.unlink(bin_file)
-
 # =============================================================================
 # Test runner
 # =============================================================================
+class TestFullPipeline:
+    def complete_pipeline():
+       pipeline_results = []
+        """
+        Test to check if we're ready for integration testing.
+        This test checks if individual functions can be imported.
+        """
+        # TODO: Uncomment as individual functions are completed
 
-def test_integration_ready():
-    """
-    Test to check if we're ready for integration testing.
-    This test checks if individual functions can be imported.
-    """
-   # TODO: Uncomment as individual functions are completed
+        # Step 1: Align
 
-    try:
-        from individual_functions.contig_mapping import contig_mapping
-        print("✅ contig_mapping ready")
-    except ImportError:
-        print("❌ contig_mapping not ready")
+        for assembly in multiple_assemblies:
+            for bin in sample_bins:
+                assembly_base=os.path.basename(assembly)
+                assembly_name=os.path.splitext(assembly_base)[0]
+                bin_base=os.path.basename(bin)
+                bin_name=os.path.splitext(bin_base)[0]
+                output_name=assembly_name+"_"+bin_name+".paf"
+                output_path=(output_name)
+                result = run_alignment(assembly, bin, output_path)
+                pipeline_results.append(result)
 
-    #try:
-    #    from individual_functions.PAF_parsing import PAF_parsing
-    #    print ("✅ contig_mapping ready")
-    # except ImportError:
-    #    print ("❌ contig_mapping not ready")
+    assert any(is_valid_paf(r) for r in results), "At least one PAF file should be created and not empty" result = run_alignment(multiple_assemblies[0], sample_bins[0], str(paf_file))
 
-    # For now, always pass
+        # Step 2: Parse
 
-    print("This file tests functions working together.")
-    print("\nTo run tests:")
-    print("pytest integration_test.py -v")
-    print("\nTo run specific test:")
-    print("pytest integration_test.py::TestFullPipeline::test_unbinned_contig_extraction_pipeline -v")
+        # Step 3: Map contigs
+
+        # Step 4: Extract unbinned
