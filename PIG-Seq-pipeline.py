@@ -21,28 +21,7 @@ import glob
 # Core Logic
 ##################################################################################
 
-def build_minimap2_command(assembly_files, bin_files):
-    """Build the minimap2 command as a list - Need run_alignment to execute."""
-    aligner = [
-        "minimap2",
-        "-x", "asm5",
-        "-o", output_paf,
-    ]
-    if isinstance(bin_files, list):
-        aligner.extend(bin_files)
-    else:
-        aligner.append(bin_files)
-    return aligner
-
-def run_alignment(assembly_files, bin_files):
-    """Run minimap2 alignment and return PAF files"""
-    try:
-        aligner, output_paf = build_minimap2_command(assembly_files, bin_files)
-        output_paf = subprocess.run(aligner, check=True)
-        return output_path
-    except subprocess.CalledProcessError:
-        print(f"Minimap2 alignment failed for {assembly_file}")
-        return None
+from individual_functions.contig_mapping import build_minimap2_command, run_alignment
 
 ##################################################################################
 # Command line interfacing
@@ -62,48 +41,44 @@ if __name__ == "__main__":
 
     # Expand the wildcard
     assembly_files=[]
-        for pattern in args.assemblies:
-	    assembly_files.extend(glob.glob(pattern))
+    for pattern in args.assemblies:
+        assembly_files.extend(glob.glob(pattern))
 
     bin_files=[]
-        for pattern in args.bins:
-	    bin_files.extend(glob.glob(pattern))
+    for pattern in args.bins:
+        bin_files.extend(glob.glob(pattern))
 
     # Display the files
     if assembly_files:
         print("Assembly files:")
-	    for file in assembly_files:
-		print(f" - {file}")
+        for file in assembly_files:
+            print(f" - {file}")
     else:
         print("No assembly files found")
 
     if bin_files:
-	print("Bin files:")
-	for file in bin_files:
-		print(f" - {file}")
+        print("Bin files:")
+        for file in bin_files:
+            print(f" - {file}")
     else:
-	print("No bin files found")
+        print("No bin files found")
 
     os.makedirs(args.output, exists_ok=True)
 
     failed_alignments=[]
 
     for assembly in assembly_files:
-        basename=os.path.basename(assembly)
-        name=os.path.splitext(basename)[0]
-        output_name=name+".paf"
-        output_path=os.path.join(args.output, output_name)
-        
-        results = run_alignment(assembly, bin_files, output_path)
+        for bin in bin_files:
+            assembly_base=os.path.basename(assembly)
+            assembly_name=os.path.splitext(assembly_base)[0]
+            bin_base=os.path.basename(bin)
+            bin_name=os.path.splitext(bin_base)[0]
+            output_name=assembly_name+"_"+bin_name+".paf"
+            output_path=(output_name)
+            results = run_alignment(assembly, bin_files, output_path)
 
-        if result:
-            print(f"Successful output {output}")
-        else:
-            print(f"Failed for {assembly}")
-            failed_alignments.append(assembly)
-
-    if failed_alignments:
-        print("Not all assemblies produced alignments")
-        exit(1)
-    else:
-        exit(0)
+            if result:
+                print(f"Successful output {output}")
+            else:
+                print(f"Failed for {assembly}")
+                failed_alignments.append(assembly)
