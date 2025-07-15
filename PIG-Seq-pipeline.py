@@ -21,7 +21,7 @@ import glob
 # Core Logic
 ##################################################################################
 
-def build_minimap2_command(assembly_file, bin_files):
+def build_minimap2_command(assembly_files, bin_files):
     """"Build the minimap2 command as a list - Need run_alignment to execute."""
     output_paf = "alignment_output.paf"
 
@@ -38,10 +38,10 @@ def build_minimap2_command(assembly_file, bin_files):
 
     return cmd, output_paf
 
-def run_alignment(assembly_file, bin_files):
+def run_alignment(assembly_files, bin_files):
     """Run minimap2 alignment and return PAF files"""
     try:
-        cmd, output_paf = build_minimap2_command(assembly_file, bin_files)
+        cmd, output_paf = build_minimap2_command(assembly_files, bin_files)
         results = subprocess.run(cmd, check=True)
         return output_paf
 
@@ -55,10 +55,9 @@ def run_alignment(assembly_file, bin_files):
 
 parser = argparse.ArgumentParser(description="Script for processing contigs from assemblies and splitting into binned and unbinned sets")
 
-parser.add_argument("--assemblies", nargs="+", help="The assembly files")
-parser.add_argument("--bins", nargs="+", help="The bin files")
-
-args = parser.parse_args()
+parser.add_argument("--assemblies", nargs="+", required=True, help="The assembly files")
+parser.add_argument("--bins", nargs="+", required=True, help="The bin files")
+parser.add_argument("--output", required=True, help="Output path file")
 
 # Expand the wildcard
 assembly_files=[]
@@ -83,7 +82,6 @@ if bin_files:
 		print(f" - {file}")
 else:
 		print("No bin files found")
-
 ##################################################################################
 # Main workflow
 ##################################################################################
@@ -95,6 +93,4 @@ else:
 ##################################################################################
 
 if __name__ == "__main__":
-    parser = setup_argument_parser()
     args = parser.parse_args()
-    main(args)
