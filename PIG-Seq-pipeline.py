@@ -22,25 +22,25 @@ import glob
 ##################################################################################
 
 def build_minimap2_command(assembly_files, bin_files):
-    """"Build the minimap2 command as a list - Need run_alignment to execute."""
+    """Build the minimap2 command as a list - Need run_alignment to execute."""
 
-    cmd = [ 
+    aligner = [
         "minimap2",
-        "-x", "asm5", 
-        "-o", output_paf, 
+        "-x", "asm5",
+        "-o", output_paf,
     ]
 
-    if isinstance(bin_files, list): 
-        cmd.extend(bin_files) 
-    else: 
-        cmd.append(bin_files)
+    if isinstance(bin_files, list):
+        aligner.extend(bin_files)
+    else:
+        aligner.append(bin_files)
 
-    return cmd, output_paf
+    return aligner, output_paf
 
 def run_alignment(assembly_files, bin_files):
     """Run minimap2 alignment and return PAF files"""
     try:
-        cmd, output_paf = build_minimap2_command(assembly_files, bin_files)
+        aligner, output_paf = build_minimap2_command(assembly_files, bin_files)
         results = subprocess.run(cmd, check=True)
         return output_paf
     except subprocess.CalledProcessError:
@@ -54,7 +54,7 @@ def run_alignment(assembly_files, bin_files):
 parser = argparse.ArgumentParser(description="Script for processing contigs from assemblies and splitting into binned and unbinned sets")
 parser.add_argument("--assemblies", nargs="+", required=True, help="The assembly files")
 parser.add_argument("--bins", nargs="+", required=True, help="The bin files")
-parser.add_argument("--output", required=True, help="Output path file")
+parser.add_argument("--output", required=True, help="Output directory")
 
 ##################################################################################
 # Main workflow
@@ -87,10 +87,16 @@ if __name__ == "__main__":
     else:
 	print("No bin files found")
 
-    results = run_alignment(assembly_files, bin_files, args.output)
+    for assembly in assembly_files:
+        basename=os.path.basename(assembly)
+        name=os.path.splitext(basename)[0]
+        output_name=name+".paf"
+        output=os.path.join(args.output, output_name)
+        output = run_alignment(assembly, bin_files)
 
     if results:
-        print(f"Processing completed successfuly. Output: {results}@
+        print(f"Processing completed successfuly. Output: {results}"
+        exit(0)
     else:
         print("Processing failed")
-    exit(1)
+        exit(1)
