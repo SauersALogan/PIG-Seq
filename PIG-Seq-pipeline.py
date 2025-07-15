@@ -43,7 +43,6 @@ def run_alignment(assembly_files, bin_files):
         cmd, output_paf = build_minimap2_command(assembly_files, bin_files)
         results = subprocess.run(cmd, check=True)
         return output_paf
-
     except subprocess.CalledProcessError:
         print("Minimap2 alignment failed")
         return None
@@ -56,41 +55,42 @@ parser = argparse.ArgumentParser(description="Script for processing contigs from
 parser.add_argument("--assemblies", nargs="+", required=True, help="The assembly files")
 parser.add_argument("--bins", nargs="+", required=True, help="The bin files")
 parser.add_argument("--output", required=True, help="Output path file")
-args = parser.parse_args()
 
-# Expand the wildcard
-assembly_files=[]
-for pattern in args.assemblies:
-	assembly_files.extend(glob.glob(pattern))
-
-bin_files=[]
-for pattern in args.bins:
-	bin_files.extend(glob.glob(pattern))
-
-# Display the files
-if assembly_files:
-	print("Assembly files:")
-	for file in assembly_files:
-		print(f" - {file}")
-else:
-		print("No assembly files found")
-
-if bin_files:
-	print("Bin files:")
-	for file in bin_files:
-		print(f" - {file}")
-else:
-		print("No bin files found")
 ##################################################################################
 # Main workflow
 ##################################################################################
 
-def assembly_alignment(assembly_files, bins_files):
-    paf_file = run_alignment(assembly_files, bin_files)
-
-##################################################################################
-# Entry Point
-##################################################################################
-
 if __name__ == "__main__":
-    
+    args = parser.parse_args()
+
+    # Expand the wildcard
+    assembly_files=[]
+        for pattern in args.assemblies:
+	    assembly_files.extend(glob.glob(pattern))
+
+    bin_files=[]
+        for pattern in args.bins:
+	    bin_files.extend(glob.glob(pattern))
+
+    # Display the files
+    if assembly_files:
+        print("Assembly files:")
+	    for file in assembly_files:
+		print(f" - {file}")
+    else:
+        print("No assembly files found")
+
+    if bin_files:
+	print("Bin files:")
+	for file in bin_files:
+		print(f" - {file}")
+    else:
+	print("No bin files found")
+
+    results = run_alignment(assembly_files, bin_files, args.output)
+
+    if results:
+        print(f"Processing completed successfuly. Output: {results}@
+    else:
+        print("Processing failed")
+    exit(1)
