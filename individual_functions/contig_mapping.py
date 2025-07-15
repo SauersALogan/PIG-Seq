@@ -16,32 +16,29 @@ import subprocess # Needed to run external command sin python
 # Actual functions to test
 # =============================================================================
 
-def build_minimap2_command(assembly_file, bin_files):
+def build_minimap2_command(assembly, bin, output_path):
     """"Build the minimap2 command as a list - Need run_alignment to execute."""
-    output_paf = "alignment_output.paf"
-
-    cmd = [ 
+    aligner = [ 
         "minimap2",
-        "-x", "asm5", 
-        "-o", output_paf, 
+        "-x", "asm5",
+        assembly, bin
+        ">", output_path
     ]
-
-    if isinstance(bin_files, list): 
-        cmd.extend(bin_files) 
+    if isinstance(bin, list): 
+        aligner.extend(bin) 
     else: 
-        cmd.append(bin_files)
+        aligner.append(bin)
+    return aligner, output_path
 
-    return cmd, output_paf
-
-def run_alignment(assembly_file, bin_files):
+def run_alignment(assembly, bin, output_path):
     """Run minimap2 alignment and return PAF files"""
-    try:
-        cmd, output_paf = build_minimap2_command(assembly_file, bin_files)
-        results = subprocess.run(cmd, check=True)
-        return output_paf
-
+    for bin in bin_files:
+        try:
+            aligner = build_minimap2_command(assembly, bin, output_path)
+            result = subprocess.run(aligner, check=True)
+            return output_path
     except subprocess.CalledProcessError:
-        print("Minimap2 alignment failed")
+        print("Minimap2 alignment failed for {assembly_file}")
         return None
 
 # =============================================================================
@@ -137,18 +134,23 @@ def test_single_assembly_alignment(single_assembly, sample_bins):
     """Test that minimap2 actually runs and produces output on a single assembly"""
 
     paf_file = run_alignment(single_assembly, sample_bins)
-    assert os.path.exists(paf_file), "PAF file should be created"
-    assert os.path.getsize(paf_file) > 0, "PAF file should not be empty"
+    assert os.path.exists(output_path), "PAF file should be created"
+    assert os.path.getsize(output_path) > 0, "PAF file should not be empty"
 
 def test_multiple_assemblies(multiple_assemblies, sample_bins):
-    results = []
+    result = []
     for assembly in multiple_assemblies:
         paf_file = run_alignment(assembly, sample_bins)
-        assert os.path.exists(paf_file), "PAF file should be created"
-        assert os.path.getsize(paf_file) > 0, "PAF file should not be empty"
+        assert os.path.exists(output_path), "PAF file should be created"
+        assert os.path.getsize(output_path) > 0, "PAF file should not be empty"
 
 if __name__ == "__main__":
     # Run tests when file is executed directly
+    for assembly in assembly_files:
+        basename=os.path.basename(assembly)
+        name=os.path.splitext(basename)[0]
+        output_name=name+".paf"
+        output_path=os.path.join(args.output, output_name)
     success = run_all_tests()
     
     if success:
