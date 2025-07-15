@@ -85,7 +85,6 @@ if __name__ == "__main__":
 
     os.makedirs(args.output, exists_ok=True)
 
-    successful_alignments=[]
     failed_alignments=[]
 
     for assembly in assembly_files:
@@ -95,10 +94,12 @@ if __name__ == "__main__":
         output_path=os.path.join(args.output, output_name)
         
         results = run_alignment(assembly, bin_files, output_path)
-        if output:
+
+        if result:
             print(f"Successful output {output}")
         else:
             print(f"Failed for {assembly}")
+            failed_alignments.append(assembly)
 
     if failed_alignments:
         print("Not all assemblies produced alignments")
