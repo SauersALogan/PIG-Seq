@@ -53,9 +53,9 @@ def single_assembly():
     AAAAGGGGCCCCTTTTAAAAGGGGCCCCTTTTAAAAGGGGCCCCTTTTAAAAGGGGCCCCTTTT
     """
 
-    with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.fasta') as tmp:
+    with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='_assembly1.fasta') as tmp:
         tmp.write(assembly_content)
-        return tmp.name
+        return [tmp.name]
 
 @pytest.fixture
 def multiple_assemblies():
