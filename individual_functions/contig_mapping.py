@@ -32,7 +32,7 @@ def run_alignment(assembly, bin, output_path):
         result = subprocess.run(aligner, check=True)
         return output_path
     except subprocess.CalledProcessError:
-        print("Minimap2 alignment failed for {assembly_file}")
+        print("Minimap2 alignment failed for {assembly}")
         return None
 
 # =============================================================================
@@ -152,43 +152,11 @@ def test_multiple_assemblies(multiple_assemblies, sample_bins):
             assert os.path.exists(results), "PAF file should be created"
             assert os.path.getsize(results) > 0, "PAF file should not be empty"
 
-def run_all_tests():
-    temp_files = []
-    try:
-        # Call test data creation
-        assembly = single_assembly()
-        assemblies = multiple_assemblies()
-        bins = sample_bins()
-
-        # Track files for eletion
-        temp_files.extend([assembly] if isinstance(assembly, str) else assembly)
-        temp_files.extend(assemblies)
-        temp_files.extend(bins)
-
-        # Call the test functions
-        test_single_assembly(assembly, bins)
-        test_multiple_assemblies(assemblies, bins)
-
-        return True
-    except Exception as e:
-        print(f"Test failed: {e}")
-        return False
-    finally:
-        for temp_file in temp_files:
-            if os.path.exists(temp_file):
-                os.unlink(temp_file)
-
-if __name__ == "__main__":
-    # Run tests when file is executed directly
-    success = run_all_tests()
-    
-    if success:
-        print("\n" + "=" * 50)
-        print("FUNCTION READY FOR INTEGRATION!")
-        print("=" * 50)
-        print("You can now:")
-        print("1. Import this function in integration_test.py")
-        print("2. Uncomment the relevant integration tests")
-        print("3. Run: pytest integration_test.py -v")
-    else:
-        exit(1)
+@pytest.fixture(autouse=True)
+def cleanup_paf_files(request):
+    def cleanup():
+        import glob
+        for paf_file in glob.glob("*.paf"):
+            if os.path.exists(paf_file):
+                os.unlink(paf_file)
+    request.addfinalizer(cleanup)
