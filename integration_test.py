@@ -19,8 +19,6 @@ As functions are built they will replace the TODO sections
 import pytest
 import tempfile
 import os
-from pathlib import Path
-from unittest.mock import patch, MagicMock
 import subprocess
 
 # =============================================================================
@@ -99,26 +97,32 @@ def sample_bins():
 
 class TestAlignmentWorkflow:
     """Test alignment processing workflow."""
-    
-    def test_contig_mapping_workflow(self, multiple_assemblies, sample_bins, tmp_path):
+
+    def build_minimap2_command(assembly, bin, output_path):
+    """"Build the minimap2 command as a list - Need run_alignment to execute."""
+        aligner = [ 
+            "minimap2",
+            "-x", "asm5",
+            assembly, bin,
+            "-o", output_path
+        ]
+    return aligner
+
+    def run_alignment(assembly, bin, output_path):
+        """Run minimap2 alignment and return PAF files"""
         try:
-            # TODO: Uncomment when functions are ready
-            # Step 1: Build minimap command for similar analysis
-            # cmd = build_minimap_command("bins.fa", "assembly.fa")
-            # assert "minimap2" in cmd, "Command should contain minimap2"
-            # assert "bins.fa" in cmd and "assembly.fa" in cmd, "Files should be in command"
-            
-            # For now, just pass
-            assert True, "Alignment workflow placeholder - implement when functions ready"
-            
-        finally:
-            os.unlink(sample_bins)
+            aligner = build_minimap2_command(assembly, bin, output_path)
+            result = subprocess.run(aligner, check=True)
+            return output_path
+        except subprocess.CalledProcessError:
+            print("Minimap2 alignment failed for {assembly}")
+            return None
 
 class TestPAFParsing:
     """"test the PAF parsing workflow."""
 
-    def test_PAF_parsing_workflow(self, tmp_path):
-        try:
+    #def test_PAF_parsing_workflow(self, tmp_path):
+        #try:
             # TODO: Uncomment when functions are ready
             # Step 1: Obtain the quality metrics
             # Need to test identity and coverage against selected values
@@ -128,8 +132,8 @@ class TestPAFParsing:
             # Need to match these names to the query contig names for good alignments
             # Need to collect contigs with no good alignments into a new file
 
-        finally:
-            os.unlink(tmp_path)
+        #finally:
+            #os.unlink(tmp_path)
 
             # SUCCESS CRITERIA
             # print(f"✅ Pipeline Success:")
@@ -140,12 +144,12 @@ class TestPAFParsing:
             # print(f"   Unbinned contig names: {list(unbinned_contigs)}")
             
             # For now, just pass
-            assert True, "Full pipeline placeholder - THE ULTIMATE GOAL!"
+            #assert True, "Full pipeline placeholder - THE ULTIMATE GOAL!"
             
-        finally:
-            os.unlink(multiple_assemblies)
-            for bin_file in sample_bins:
-                os.unlink(bin_file)
+        #finally:
+            #os.unlink(multiple_assemblies)
+            #for bin_file in sample_bins:
+                #os.unlink(bin_file)
 
 # =============================================================================
 # Test runner
@@ -156,13 +160,13 @@ def test_integration_ready():
     Test to check if we're ready for integration testing.
     This test checks if individual functions can be imported.
     """
-    # TODO: Uncomment as individual functions are completed
-    
-    # try:
-    #     from individual_functions.contig_mapping import contig_mapping
-    #     print("✅ contig_mapping ready")
-    # except ImportError:
-    #     print("❌ contig_mapping not ready")
+   # TODO: Uncomment as individual functions are completed
+
+    try:
+        from individual_functions.contig_mapping import contig_mapping
+        print("✅ contig_mapping ready")
+    except ImportError:
+        print("❌ contig_mapping not ready")
 
     #try:
     #    from individual_functions.PAF_parsing import PAF_parsing
@@ -171,11 +175,7 @@ def test_integration_ready():
     #    print ("❌ contig_mapping not ready")
 
     # For now, always pass
-    assert True, "Integration readiness check placeholder"
 
-if __name__ == "__main__":
-    print("Integration Test Suite")
-    print("======================")
     print("This file tests functions working together.")
     print("\nTo run tests:")
     print("pytest integration_test.py -v")
