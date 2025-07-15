@@ -24,8 +24,9 @@ def build_minimap2_command(assembly, bin, output_path):
         assembly, bin,
         "-o", output_path
     ]
+    return aligner
     
-def run_alignment(assembly, bin_files, output_path):
+def run_alignment(assembly, bin, output_path):
     """Run minimap2 alignment and return PAF files"""
     try:
         aligner = build_minimap2_command(assembly, bin, output_path)
@@ -124,18 +125,18 @@ def sample_bins():
 # Setup the actual tests
 # =============================================================================
 
-def test_single_assembly_alignment(single_assembly, ):
+def test_single_assembly_alignment(single_assembly, sample_bins):
     """Test that minimap2 actually runs and produces output on a single assembly"""
 
-    paf_file = run_alignment(single_assembly, sample_bins)
-    assert os.path.exists(output_path), "PAF file should be created"
-    assert os.path.getsize(output_path) > 0, "PAF file should not be empty"
+    results = run_alignment(single_assembly, sample_bins, output_path)
+    assert os.path.exists(results), "PAF file should be created"
+    assert os.path.getsize(results) > 0, "PAF file should not be empty"
 
 def test_multiple_assemblies(multiple_assemblies, sample_bins):
         for assembly in multiple_assemblies:
-        paf_file = run_alignment(assembly, sample_bins)
-        assert os.path.exists(output_path), "PAF file should be created"
-        assert os.path.getsize(output_path) > 0, "PAF file should not be empty"
+            results = run_alignment(assembly, sample_bins, output_path)
+            assert os.path.exists(results), "PAF file should be created"
+            assert os.path.getsize(results) > 0, "PAF file should not be empty"
 
 if __name__ == "__main__":
     # Run tests when file is executed directly
