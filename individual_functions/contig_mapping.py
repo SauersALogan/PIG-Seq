@@ -15,7 +15,6 @@ import subprocess # Needed to run external command sin python
 # =============================================================================
 # Actual functions to test
 # =============================================================================
-
 def build_minimap2_command(assembly, bin, output_path):
     """"Build the minimap2 command as a list - Need run_alignment to execute."""
     aligner = [ 
@@ -25,7 +24,7 @@ def build_minimap2_command(assembly, bin, output_path):
         "-o", output_path
     ]
     return aligner
-    
+
 def run_alignment(assembly, bin, output_path):
     """Run minimap2 alignment and return PAF files"""
     try:
@@ -55,7 +54,8 @@ def single_assembly():
 
     with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='_assembly1.fasta') as tmp:
         tmp.write(assembly_content)
-        return [tmp.name]
+        assembly_file = tmp.name
+    return [assembly_file]
 
 @pytest.fixture
 def multiple_assemblies():
@@ -80,7 +80,6 @@ def multiple_assemblies():
     >contig4 length=600
     AAAAGGGGCCCCTTTTAAAAGGGGCCCCTTTTAAAAGGGGCCCCTTTTAAAAGGGGCCCCTTTT
     """
-
     assembly_3_content = """
     >contig1 length=1000
     ATCGATCGATCGATCGATCGATGATCGATCGATCAATCGATCGATCGATCGATCGATCG
@@ -154,11 +153,17 @@ def test_multiple_assemblies(multiple_assemblies, sample_bins):
             assert os.path.getsize(results) > 0, "PAF file should not be empty"
 
 def run_all_tests():
+    temp_files = []
     try:
         # Call test data creation
         assembly = single_assembly()
         assemblies = multiple_assemblies()
         bins = sample_bins()
+
+        # Track files for eletion
+        temp_files.extend([assembly] if isinstance(assembly, str) else assembly)
+        temp_files.extend(assemblies)
+        temp_files.extend(bins)
 
         # Call the test functions
         test_single_assembly(assembly, bins)
@@ -168,6 +173,10 @@ def run_all_tests():
     except Exception as e:
         print(f"Test failed: {e}")
         return False
+    finally:
+        for temp_file in temp_files:
+            if os.path.exists(temp_file):
+                os.unlink(temp_file)
 
 if __name__ == "__main__":
     # Run tests when file is executed directly
