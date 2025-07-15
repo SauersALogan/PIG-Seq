@@ -127,19 +127,6 @@ def sample_bins():
 
 def test_single_assembly_alignment(single_assembly, sample_bins):
     """Test that minimap2 actually runs and produces output on a single assembly"""
-
-    results = run_alignment(single_assembly, sample_bins, output_path)
-    assert os.path.exists(results), "PAF file should be created"
-    assert os.path.getsize(results) > 0, "PAF file should not be empty"
-
-def test_multiple_assemblies(multiple_assemblies, sample_bins):
-        for assembly in multiple_assemblies:
-            results = run_alignment(assembly, sample_bins, output_path)
-            assert os.path.exists(results), "PAF file should be created"
-            assert os.path.getsize(results) > 0, "PAF file should not be empty"
-
-if __name__ == "__main__":
-    # Run tests when file is executed directly
     for assembly in assembly_files:
         for bin in bin_files:
             assembly_base=os.path.basename(assembly)
@@ -148,6 +135,41 @@ if __name__ == "__main__":
             bin_name=os.path.splitext(bin_base)[0]
             output_name=assembly_name+"_"+bin_name+".paf"
             output_path=(output_name)
+            results = run_alignment(single_assembly, sample_bins, output_path)
+            assert os.path.exists(results), "PAF file should be created"
+            assert os.path.getsize(results) > 0, "PAF file should not be empty"
+
+def test_multiple_assemblies(multiple_assemblies, sample_bins):
+        for assembly in assembly_files:
+        for bin in bin_files:
+            assembly_base=os.path.basename(assembly)
+            assembly_name=os.path.splitext(assembly_base)[0]
+            bin_base=os.path.basename(bin)
+            bin_name=os.path.splitext(bin_base)[0]
+            output_name=assembly_name+"_"+bin_name+".paf"
+            output_path=(output_name)
+            results = run_alignment(assembly, sample_bins, output_path)
+            assert os.path.exists(results), "PAF file should be created"
+            assert os.path.getsize(results) > 0, "PAF file should not be empty"
+
+def run_all_tests():
+    try:
+        # Call test data creation
+        assembly = single_assembly()
+        assemblies = multiple_assemblies()
+        bins = sample_bins()
+
+        # Call the test functions
+        test_single_assembly(assembly, bins)
+        test_multiple_assemblies(assemblies, bins)
+
+        return True
+    except Exception as e:
+        print(f"Test failed: {e}")
+        return False
+
+if __name__ == "__main__":
+    # Run tests when file is executed directly
     success = run_all_tests()
     
     if success:
