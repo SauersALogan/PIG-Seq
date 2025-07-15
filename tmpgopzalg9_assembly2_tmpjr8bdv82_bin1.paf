@@ -1,7 +1,0 @@
-bin1_scaffold1	158	16	153	+	contig1	329	4	146	90	142	10	tp:A:P	cm:i:28	s1:i:88	s2:i:82	dv:f:0.0102	rl:i:0
-bin1_scaffold1	158	20	153	+	contig1	329	4	138	82	134	0	tp:A:S	cm:i:24	s1:i:82	dv:f:0.0150	rl:i:0
-bin1_scaffold1	158	24	153	+	contig1	329	4	134	78	130	0	tp:A:S	cm:i:22	s1:i:78	dv:f:0.0162	rl:i:0
-bin1_scaffold1	158	102	153	-	contig1	329	106	157	51	51	0	tp:A:S	cm:i:17	s1:i:51	dv:f:0.0058	rl:i:0
-bin1_scaffold1	158	102	153	-	contig1	329	98	149	51	51	0	tp:A:S	cm:i:17	s1:i:51	dv:f:0.0058	rl:i:0
-bin1_scaffold1	158	102	153	-	contig1	329	102	153	51	51	0	tp:A:S	cm:i:17	s1:i:51	dv:f:0.0058	rl:i:0
-bin1_scaffold1	158	102	152	-	contig1	329	95	145	50	50	0	tp:A:S	cm:i:16	s1:i:50	dv:f:0.0062	rl:i:0
