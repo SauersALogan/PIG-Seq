@@ -1,5 +1,4 @@
 name: Integration Tests
-
 on:
   push:
     branches: [ main ]
@@ -12,10 +11,10 @@ jobs:
     
     steps:
     - name: Checkout code
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
     
     - name: Set up Python
-      uses: actions/setup-python@v3
+      uses: actions/setup-python@v4
       with:
         python-version: '3.9'
     
@@ -25,17 +24,16 @@ jobs:
         pip install pytest
     
     - name: Run tests
-      run: pytest test_integration.py -v
-
-# Cleanup
-   - name: Clean up __pycache__ directories
+      run: pytest -v
+    
+    - name: Clean up __pycache__ directories
       if: always()
       run: |
         echo "Cleaning up __pycache__ directories..."
         find . -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
         find . -name "*.pyc" -delete 2>/dev/null || true
         find . -name "*.pyo" -delete 2>/dev/null || true
-        echo "✅ __pycache__ cleanup complete"
+        echo "Cleanup complete"
     
     - name: Clean up test artifacts
       if: always()
@@ -44,4 +42,4 @@ jobs:
         find . -name "*.paf" -delete 2>/dev/null || true
         find . -name "*_assembly*.fasta" -delete 2>/dev/null || true
         find . -name "*_bin*.fasta" -delete 2>/dev/null || true
-        echo "✅ Test artifacts cleanup complete"
+        echo "Test artifacts cleanup complete"
