@@ -23,28 +23,24 @@ import glob
 
 def build_minimap2_command(assembly_files, bin_files):
     """Build the minimap2 command as a list - Need run_alignment to execute."""
-
     aligner = [
         "minimap2",
         "-x", "asm5",
         "-o", output_paf,
     ]
-
     if isinstance(bin_files, list):
         aligner.extend(bin_files)
     else:
         aligner.append(bin_files)
-
-    return aligner, output_paf
+    return aligner
 
 def run_alignment(assembly_files, bin_files):
     """Run minimap2 alignment and return PAF files"""
-    try:
-        aligner, output = build_minimap2_command(assembly_files, bin_files)
-        output = subprocess.run(cmd, check=True)
-        return output
+        aligner, output_paf = build_minimap2_command(assembly_files, bin_files)
+        output_paf = subprocess.run(aligner, check=True)
+        return output_path
     except subprocess.CalledProcessError:
-        print("Minimap2 alignment failed")
+        print(f"Minimap2 alignment failed for {assembly_file}")
         return None
 
 ##################################################################################
@@ -87,14 +83,25 @@ if __name__ == "__main__":
     else:
 	print("No bin files found")
 
+    os.makedirs(args.output, exists_ok=True)
+
+    successful_alignments=[]
+    failed_alignments=[]
+
     for assembly in assembly_files:
         basename=os.path.basename(assembly)
         name=os.path.splitext(basename)[0]
         output_name=name+".paf"
-        output=os.path.join(args.output, output_name)
-        output = run_alignment(assembly, bin_files)
+        output_path=os.path.join(args.output, output_name)
+        
+        results = run_alignment(assembly, bin_files, output_path)
         if output:
-            print(f"Processing completed successfully, output {output}")
+            print(f"Successful output {output}")
         else:
-            print("Processing failed for {assembly}")
-            exit(1)
+            print(f"Failed for {assembly}")
+
+    if failed_alignments:
+        print("Not all assemblies produced alignments")
+        exit(1)
+    else:
+        exit(0)
