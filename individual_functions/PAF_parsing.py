@@ -1,0 +1,106 @@
+#!/usr/bin/env python3
+"""
+PAF_parsing.py - Parse the output PAF
+==========================================
+
+Function to parse the output PAF from contig_mapping.py selecting bins mapped to contigs with the specified identity and coverage
+This file contains the function and its tests
+"""
+
+import tempfile
+import os
+import pytest
+import subprocess # Needed to run external command sin python
+
+# =============================================================================
+# Actual functions to test
+# =============================================================================
+
+
+# =============================================================================
+# Create the mock data for testing
+# =============================================================================
+@pytest.fixture
+def single_paf():
+    """Create a single test paf file for unit testing."""
+    paf_content = """
+	read_001\t100000\t0\t99995\t+\tcontig_1\t750000\t500000
+		\t599995\t99995\t99995\t55
+	read_002\t1000\t0\t695\t+\tcontig_2\t375000\t375
+		\t1070\t675\t695\t60
+	read_003\t10000\t0\t8995\t+\tcontig_3\t175000\t10000
+		\t18995\t2995\t8995\t54
+	read_004\t7000\t3000\t6750\t+\tcontig_4\t55000\t7500
+		\t11250\t3713\t3750\t21
+	"""
+
+    with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='_assembly1.paf') as tmp:
+        tmp.write(assembly_content)
+        assembly_file = tmp.name
+    return [paf_file]
+
+@pytest.fixture
+def multiple_pafs():
+    """Create multiple paf files for integration testing."""
+    paf_1_content = """
+	read_001\t100000\t0\t99995\t+\tcontig_1\t750000\t500000
+		\t599995\t99995\t99995\t55
+	read_002\t1000\t0\t695\t+\tcontig_2\t375000\t375
+		\t1070\t675\t695\t60
+	read_003\t10000\t0\t8995\t+\tcontig_3\t175000\t10000
+		\t18995\t2995\t8995\t54
+	read_004\t7000\t3000\t6750\t+\tcontig_4\t55000\t7500
+		\t11250\t3713\t3750\t21
+	"""
+    paf_2_content = """
+    read_001\t1000000\t0\t909995\t+\tcontig_4\t2500000\t550000
+		\t1459995\t891795\t909995\t55
+	read_002\t4000\t1000\t1695\t+\tcontig_5\t375000\t375
+		\t1070\t675\t695\t60
+	read_003\t10000\t0\t8995\t+\tcontig_6\t175000\t20000
+		\t28995\t2995\t8995\t54
+	read_004\t7000\t3000\t6750\t+\tcontig_7\t55000\t7500
+		\t11250\t3713\t3750\t21
+	"""
+
+    paf_files = []
+    for i, content in enumerate([paf_1_content, paf_2_content, paf_3_content], 1):
+        with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix=f'_assembly{i}.paf') as tmp:
+            tmp.write(content)
+            paf_files.append(tmp.name)
+    return paf_files
+
+# =============================================================================
+# Setup the actual tests
+# =============================================================================
+
+def test_single_paf(single_paf):
+    """Test that the parsing function works on a single paf file"""
+    for paf in paf:
+            paf_base=os.path.basename(paf)
+            paf_name=os.path.splitext(paf)[0]
+            output_name=paf_name
+            output_path=(output_name)
+            results = run_paf_parsing(single_paf)
+    assert 
+    assert 
+
+def test_multiple_assemblies(multiple_pafs):
+    """Test that parsing function works on multiple pafs"""
+    results = []
+    for paf in paf:
+            paf_base=os.path.basename(paf)
+            paf_name=os.path.splitext(paf)[0]
+            output_name=paf_name
+            output_path=(output_name)
+            results = run_paf_parsing(multiple_pafs)
+    assert 
+
+@pytest.fixture(autouse=True)
+def cleanup_paf_files(request):
+    def cleanup():
+        import glob
+        for paf_file in glob.glob("*.paf"):
+            if os.path.exists(paf_file):
+                os.unlink(paf_file)
+    request.addfinalizer(cleanup)

@@ -40,20 +40,13 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     # Expand the wildcard
-    assembly_files = []
+    assembly_files=[]
     for pattern in args.assemblies:
         assembly_files.extend(glob.glob(pattern))
 
-    bin_files = []
+    bin_files=[]
     for pattern in args.bins:
-        expanded = glob.glob(pattern)
-        if expanded:
-            bin_files.extend(expanded)
-        else:
-            if os.path.isdir(pattern):
-                bin_files.extend(glob.glob(os.path.join(pattern, "*.fasta")))
-                bin_files.extend(glob.glob(os.path.join(pattern, "*.fa")))
-                bin_files.extend(glob.glob(os.path.join(pattern, "*.fas")))
+        bin_files.extend(glob.glob(pattern))
 
     # Display the files
     if assembly_files:
@@ -65,27 +58,27 @@ if __name__ == "__main__":
 
     if bin_files:
         print("Bin files:")
-        for file in bin_files:
-            print(f" - {file}")
+	for file in bin_files:
+	    print(f" - {file}")
     else:
-        print("No bin files found")
+	print("No bin files found")
 
-    os.makedirs(args.output, exist_ok=True)
+    os.makedirs(args.output, exists_ok=True)
 
     failed_alignments=[]
 
     for assembly in assembly_files:
         for bin in bin_files:
-            assembly_base=os.path.basename(assembly)
+        assembly_base=os.path.basename(assembly)
             assembly_name=os.path.splitext(assembly_base)[0]
             bin_base=os.path.basename(bin)
             bin_name=os.path.splitext(bin_base)[0]
             output_name=assembly_name+"_"+bin_name+".paf"
-            output_path=os.path.join(args.output, output_name)
-            result = run_alignment(assembly, bin, output_path)
+            output_path=(output_name)
+            results = run_alignment(assembly, bin_files, output_path)
 
             if result:
-                print(f"Aligned {assembly_name} to {bin_name}")
+                print(f"Successful output {output}")
             else:
-                print(f"Failed to align {assembly_name} to {bin_name}")
+                print(f"Failed for {assembly}")
                 failed_alignments.append(assembly)
