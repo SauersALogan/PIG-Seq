@@ -142,7 +142,7 @@ def test_multiple_assemblies(multiple_pafs):
 def cleanup_paf_files(request):
     def cleanup():
         import glob
-        for paf_file in glob.glob("*.paf"):
-            if os.path.exists(paf_file):
-                os.unlink(paf_file)
+        for tsv_file in glob.glob("*.tsv"):
+            if os.path.exists(tsv_file):
+                os.unlink(tsv_file)
     request.addfinalizer(cleanup)
