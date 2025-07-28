@@ -20,6 +20,7 @@ import pytest
 import tempfile
 import os
 import subprocess
+import pandas as pd
 
 # =============================================================================
 # Integration test fixtures - Shared test data
@@ -80,6 +81,7 @@ AAGAAAGAAGGAAGGAAGGAAGAAAGAAAGAAGGAAGGAAGGAAGAAAGAAAGAAGGAAGGAAGGAAGAAAGAAAGAAGG
 # Import the functions from the individual_functions folder
 # =============================================================================
 from individual_functions.contig_mapping import build_minimap2_command, run_alignment
+from individual_functions.PAF_parsing import PAF_parsing
 
 # =============================================================================
 # Integration test - Test functions working together
@@ -92,7 +94,7 @@ class TestAlignmentWorkflow:
         """Test that minimap2 runs and produces proper output with multiple assemblies"""
         def is_valid_paf(result):
             return result and os.path.exists(result) and os.path.getsize(result) > 0
-    
+
         results = []
         for assembly in multiple_assemblies:
             for bin in sample_bins:
@@ -109,16 +111,18 @@ class TestAlignmentWorkflow:
 class TestPAFParsing:
     """test the PAF parsing workflow."""
 
-    #def test_PAF_parsing_workflow(self, tmp_path):
-        #try:
-            # TODO: Uncomment when functions are ready
-            # Step 1: Obtain the quality metrics
-            # Need to test identity and coverage against selected values
-            # Should assert the paf created above in cmd
-
-            # Step 2: Need to extract names from original assembly contigs
-            # Need to match these names to the query contig names for good alignments
-    pass # Need to collect contigs with no good alignments into a new file
+    def test_parsing(results):
+        """Test that parsing function works on multiple pafs"""
+        good_read = "read_001"
+        poor_reads = ["read_002", "read_003", "read_004"]
+        PAF_parsing(results)
+        for input_file in results:
+            expected_output = os.path.splitext(input_file)[0] + ".tsv"
+            output_file = pd.read_csv(expected_output, delimiter='\t', header=None)
+            read_names = output_file.iloc[:, 0].tolist()
+        assert good_read in read_names, "read_001 is in the output"
+        for poor in poor_reads:
+            assert poor not in read_names, f"'{poor}' was found in output!"
 
 # =============================================================================
 # Test runner

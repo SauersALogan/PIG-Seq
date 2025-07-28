@@ -15,24 +15,45 @@ import subprocess # Needed to run external command sin python
 # =============================================================================
 # Actual functions to test
 # =============================================================================
-def build_minimap2_command(assembly, bin, output_path):
+def build_minimap2_command(assembly, bins, output_path):
     """"Build the minimap2 command as a list - Need run_alignment to execute."""
-    aligner = [ 
+    minimap = [
         "minimap2",
         "-x", "asm5",
-        assembly, bin,
+        assembly, bins,
         "-o", output_path
     ]
     return aligner
 
-def run_alignment(assembly, bin, output_path):
+def run_alignment(assembly, bin_files, output_path):
     """Run minimap2 alignment and return PAF files"""
-    try:
+    if isinstance(bins, str):
+        assembly_base=os.path.basename(assembly)
+        assembly_name=os.path.splitext(assembly_base)[0]
+        output_name=assembly_name+".paf"
+        output_path=(output_name)
         aligner = build_minimap2_command(assembly, bin, output_path)
-        result = subprocess.run(aligner, check=True)
+        alignment = subprocess.run(aligner, check=True)
         return output_path
-    except subprocess.CalledProcessError:
-        print("Minimap2 alignment failed for {assembly}")
+        except subprocess.CalledProcessError:
+            print("Minimap2 alignment failed for {assembly}")
+        return None
+    elif isinstance(bins, list):
+        with open("merged_bins.fa", "w") as merged:
+            for bin in bins:
+                with open(bin, "r") as input_bin:
+                    bin_content = input_bin.read()
+                    merged.write(bin_content)
+                    merged.write("\n")
+        assembly_base=os.path.basename(assembly)
+        assembly_name=os.path.splitext(assembly_base)[0]
+        output_name=assembly_name+".paf"
+        output_path=(output_name)
+        aligner = build_minimap2_command(assembly, bin, output_path)
+        alignment = subprocess.run(aligner, check=True)
+        return output_path
+        except subprocess.CalledProcessError:
+            print("Minimap2 alignment failed for {assembly}")
         return None
 
 # =============================================================================
