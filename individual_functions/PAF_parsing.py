@@ -115,28 +115,31 @@ def multiple_pafs():
 # =============================================================================
 # Setup the actual tests
 # =============================================================================
-
 def test_single_paf(single_paf):
     """Test that the parsing function works on a single paf file"""
-    for paf in paf:
-            paf_base=os.path.basename(paf)
-            paf_name=os.path.splitext(paf)[0]
-            output_name=paf_name
-            output_path=(output_name)
-            results = run_paf_parsing(single_paf)
-    assert 
-    assert 
+    good_read = "read_001"
+    poor_reads = ["read_002", "read_003", "read_004"]
+    PAF_parsing(single_paf)
+    for input_file in single_paf:
+        expected_output = os.path.splitext(input_file)[0] + ".tsv"
+        output_file = pd.read_csv(expected_output, delimiter='\t', header=None)
+        read_names = output_file.iloc[:, 0].tolist()
+        assert good_read in read_names, "read_001 is in the output" 
+        for poor in poor_reads:
+            assert poor not in read_names, f"'{poor}' was found in output!"
 
-def test_multiple_assemblies(multiple_pafs):
+def test_multiple_pafs(multiple_pafs):
     """Test that parsing function works on multiple pafs"""
-    results = []
-    for paf in paf:
-            paf_base=os.path.basename(paf)
-            paf_name=os.path.splitext(paf)[0]
-            output_name=paf_name
-            output_path=(output_name)
-            results = run_paf_parsing(multiple_pafs)
-    assert 
+    good_read = "read_001"
+    poor_reads = ["read_002", "read_003", "read_004"]
+    PAF_parsing(multiple_pafs)
+    for input_file in multiple_pafs:
+        expected_output = os.path.splitext(input_file)[0] + ".tsv"
+        output_file = pd.read_csv(expected_output, delimiter='\t', header=None)
+        read_names = output_file.iloc[:, 0].tolist()
+        assert good_read in read_names, "read_001 is in the output" 
+        for poor in poor_reads:
+            assert poor not in read_names, f"'{poor}' was found in output!"
 
 @pytest.fixture(autouse=True)
 def cleanup_paf_files(request):
