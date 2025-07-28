@@ -15,7 +15,49 @@ import subprocess # Needed to run external command sin python
 # =============================================================================
 # Actual functions to test
 # =============================================================================
-
+def PAF_parsing(paf_files, identity_threshold = 0.95, coverage_threshold = 0.8, quality_threshold = 40):
+    """Parse PAF files to select bins meeting user requirement specifications"""
+    if isinstance(paf_files, str):
+        paf = pd.read_csv(paf_files, delimiter='\t')
+        paf_query_end = paf.iloc[:,3]
+        paf_query_start = paf.iloc[:,2]
+        paf_alignment_length = paf.iloc[:,10]
+        paf_matches = paf.iloc[:,9]
+        paf_query_length = paf.iloc[:,1]
+        paf_alignment_quality = paf.iloc[:,8]
+        paf_base=os.path.basename(paf_files)
+        paf_name=os.path.splitext(paf_files)[0]
+        output_name=paf_name
+        output_path=(output_name)
+        paf['Identity']=paf_matches/paf_alignment_length
+        paf['Coverage']=(paf_query_end - paf_query_start)/paf_query_length
+        good_alignments = paf[(paf['Identity'] > identity_threshold) & 
+        (paf['Coverage'] > coverage_threshold) & 
+        (paf_alignment_quality > quality_threshold)]  
+        good_alignments.to_csv(f"{output_path}.tsv",
+            sep='\t',header=False,index=False) 
+    elif isinstance(paf_files, list):
+        for file in paf_files:
+            paf = pd.read_csv(file, delimiter='\t')
+            paf_query_end = paf.iloc[:,3]
+            paf_query_start = paf.iloc[:,2]
+            paf_alignment_length = paf.iloc[:,10]
+            paf_matches = paf.iloc[:,9]
+            paf_query_length = paf.iloc[:,1]
+            paf_alignment_quality = paf.iloc[:,8]
+            paf_base=os.path.basename(file)
+            paf_name=os.path.splitext(file)[0]
+            output_name=paf_name
+            output_path=(output_name)
+            paf['Identity']=paf_matches/paf_alignment_length
+            paf['Coverage']=(paf_query_end - paf_query_start)/paf_query_length
+            good_alignments = paf[(paf['Identity'] > identity_threshold) & 
+            (paf['Coverage'] > coverage_threshold) & 
+            (paf_alignment_quality > quality_threshold)]  
+            good_alignments.to_csv(f"{output_path}.tsv",
+                sep='\t',header=False,index=False) 
+    else:
+        print("There is no valid PAF file found")
 
 # =============================================================================
 # Create the mock data for testing
