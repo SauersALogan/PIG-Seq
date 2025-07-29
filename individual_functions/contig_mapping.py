@@ -28,6 +28,7 @@ def build_minimap2_command(bins, assemblies, output_path):
 
 def run_alignment(bins, assemblies):
     """Run minimap2 alignment and return PAF files"""
+    paf_files = []
     if isinstance(assemblies, str):
         assembly = assemblies
         if isinstance(bins, str):
@@ -39,10 +40,9 @@ def run_alignment(bins, assemblies):
             aligner = build_minimap2_command(bin, assembly, output_path)
             try:
                 alignment = subprocess.run(aligner, check=True)
-                return output_path
+                paf_files.append(output_path)
             except subprocess.CalledProcessError:
                 print("Minimap2 alignment failed for {assembly}")
-            return None
         elif isinstance(bins, list):
             with open("merged_bins.fa", "w") as merged:
                 for bin in bins:
@@ -58,11 +58,10 @@ def run_alignment(bins, assemblies):
             aligner = build_minimap2_command(bins, assembly, output_path)
             try:
                 alignment = subprocess.run(aligner, check=True)
-                return output_path
+                paf_files.append(output_path)
             except subprocess.CalledProcessError:
                 print("Minimap2 alignment failed for {assembly}")
-            return None
-    if isinstance(assemblies, list):
+    elif isinstance(assemblies, list):
         if isinstance(bins, str):
             bin = bins
             for assembly in assemblies:
@@ -73,10 +72,9 @@ def run_alignment(bins, assemblies):
                 aligner = build_minimap2_command(bin, assembly, output_path)
                 try:
                     alignment = subprocess.run(aligner, check=True)
-                    return output_path
+                    paf_files.append(output_path)
                 except subprocess.CalledProcessError:
                     print("Minimap2 alignment failed for {assembly}")
-                return None
         elif isinstance(bins, list):
             with open("merged_bins.fa", "w") as merged:
                 for bin in bins:
@@ -93,10 +91,10 @@ def run_alignment(bins, assemblies):
                 aligner = build_minimap2_command(bins, assembly, output_path)
                 try:
                     alignment = subprocess.run(aligner, check=True)
-                    return output_path
+                    paf_files.append(output_path)
                 except subprocess.CalledProcessError:
                     print("Minimap2 alignment failed for {assembly}")
-                return None
+    return(paf_files)
 
 # =============================================================================
 # Create the mock data for testing
@@ -187,18 +185,17 @@ def sample_bins():
 # Setup the actual tests
 # =============================================================================
 
-def test_single_assembly(single_assembly, sample_bins):
+def test_single_assembly(sample_bins, single_assembly):
     """Test that minimap2 actually runs and produces output on a single assembly"""
-    results = run_alignment(single_assembly, sample_bins)
-    paf_out = pd.read_csv(results, delimiter='\t', header=None)
-    query_names = paf_out.iloc[:, 0].tolist()
-    assert "contig1" in query_names, f"contig1 not found in PAF file queries: {set(query_names)}"
+    results = run_alignment(sample_bins, single_assembly)
+    for paf_file in results:
+        paf_out = pd.read_csv(paf_file, delimiter='\t', header=None)
+        query_names = paf_out.iloc[:, 0].tolist()
+        assert "contig1" in query_names, f"contig1 not found in PAF file {paf_file} queries: {set(query_names)}"
 
-def test_multiple_assemblies(multiple_assemblies, sample_bins):
+def test_multiple_assemblies(sample_bins, multiple_assemblies):
     """Test that minimap2 runs and produces proper output with multiple assemblies"""
-    results = []
-    result = run_alignment(multiple_assemblies, sample_bins)
-    results.append(result)
+    results = run_alignment(sample_bins, multiple_assemblies)
     for paf_file in results:
         paf_out = pd.read_csv(paf_file, delimiter='\t', header=None)
         query_names = paf_out.iloc[:, 0].tolist()
