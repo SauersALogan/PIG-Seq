@@ -11,21 +11,22 @@ import tempfile
 import os
 import pytest
 import subprocess # Needed to run external command sin python
+import pandas as pd
 
 # =============================================================================
 # Actual functions to test
 # =============================================================================
-def build_minimap2_command(assemblies, bins, output_path):
+def build_minimap2_command(bins, assemblies, output_path):
     """"Build the minimap2 command as a list - Need run_alignment to execute."""
     minimap = [
         "minimap2",
         "-x", "asm5",
-        assemblies, bins,
+        bins, assemblies,
         "-o", output_path
     ]
     return minimap
 
-def run_alignment(assemblies, bins):
+def run_alignment(bins, assemblies):
     """Run minimap2 alignment and return PAF files"""
     if isinstance(assemblies, str):
         assembly = assemblies
@@ -35,7 +36,7 @@ def run_alignment(assemblies, bins):
             assembly_name=os.path.splitext(assembly_base)[0]
             output_name=assembly_name+".paf"
             output_path=(output_name)
-            aligner = build_minimap2_command(assembly, bin, output_path)
+            aligner = build_minimap2_command(bin, assembly, output_path)
             try:
                 alignment = subprocess.run(aligner, check=True)
                 return output_path
@@ -54,7 +55,7 @@ def run_alignment(assemblies, bins):
             assembly_name=os.path.splitext(assembly_base)[0]
             output_name=assembly_name+".paf"
             output_path=(output_name)
-            aligner = build_minimap2_command(assembly, bins, output_path)
+            aligner = build_minimap2_command(bins, assembly, output_path)
             try:
                 alignment = subprocess.run(aligner, check=True)
                 return output_path
@@ -69,7 +70,7 @@ def run_alignment(assemblies, bins):
                 assembly_name=os.path.splitext(assembly_base)[0]
                 output_name=assembly_name+".paf"
                 output_path=(output_name)
-                aligner = build_minimap2_command(assembly, bin, output_path)
+                aligner = build_minimap2_command(bin, assembly, output_path)
                 try:
                     alignment = subprocess.run(aligner, check=True)
                     return output_path
@@ -89,7 +90,7 @@ def run_alignment(assemblies, bins):
                 assembly_name=os.path.splitext(assembly_base)[0]
                 output_name=assembly_name+".paf"
                 output_path=(output_name)
-                aligner = build_minimap2_command(assembly, bins, output_path)
+                aligner = build_minimap2_command(bins, assembly, output_path)
                 try:
                     alignment = subprocess.run(aligner, check=True)
                     return output_path
@@ -189,17 +190,19 @@ def sample_bins():
 def test_single_assembly(single_assembly, sample_bins):
     """Test that minimap2 actually runs and produces output on a single assembly"""
     results = run_alignment(single_assembly, sample_bins)
-    assert os.path.exists(results), "PAF file should be created"
-    assert os.path.getsize(results) > 0, "PAF file should not be empty"
+    paf_out = pd.read_csv(results, delimiter='\t', header=None)
+    query_names = paf_out.iloc[:, 0].tolist()
+    assert "contig1" in query_names, f"contig1 not found in PAF file queries: {set(query_names)}"
 
 def test_multiple_assemblies(multiple_assemblies, sample_bins):
     """Test that minimap2 runs and produces proper output with multiple assemblies"""
-    def is_valid_paf(result):
-        return result and os.path.exists(result) and os.path.getsize(result) > 0
     results = []
     result = run_alignment(multiple_assemblies, sample_bins)
     results.append(result)
-    assert any(is_valid_paf(r) for r in results), "At least one PAF file should be created and not empty"
+    for paf_file in results:
+        paf_out = pd.read_csv(paf_file, delimiter='\t', header=None)
+        query_names = paf_out.iloc[:, 0].tolist()
+        assert "contig1" in query_names, f"contig1 not found in PAF file {paf_file} queries: {set(query_names)}"
 
 @pytest.fixture(autouse=True)
 def cleanup_paf_files(request):
