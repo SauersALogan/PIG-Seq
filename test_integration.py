@@ -86,47 +86,6 @@ from individual_functions.PAF_parsing import PAF_parsing
 # =============================================================================
 # Integration test - Test functions working together
 # =============================================================================
-
-class TestAlignmentWorkflow:
-    """Test alignment processing workflow."""
-
-    def test_alignment(self, multiple_assemblies, sample_bins):
-        """Test that minimap2 runs and produces proper output with multiple assemblies"""
-        def is_valid_paf(result):
-            return result and os.path.exists(result) and os.path.getsize(result) > 0
-
-        results = []
-        for assembly in multiple_assemblies:
-            for bin in sample_bins:
-                assembly_base=os.path.basename(assembly)
-                assembly_name=os.path.splitext(assembly_base)[0]
-                bin_base=os.path.basename(bin)
-                bin_name=os.path.splitext(bin_base)[0]
-                output_name=assembly_name+"_"+bin_name+".paf"
-                output_path=(output_name)
-                result = run_alignment(assembly, bin, output_path)
-                results.append(result)
-        assert any(is_valid_paf(r) for r in results), "At least one PAF file should be created and not empty"
-
-class TestPAFParsing:
-    """test the PAF parsing workflow."""
-
-    def test_parsing(results):
-        """Test that parsing function works on multiple pafs"""
-        good_read = "read_001"
-        poor_reads = ["read_002", "read_003", "read_004"]
-        PAF_parsing(results)
-        for input_file in results:
-            expected_output = os.path.splitext(input_file)[0] + ".tsv"
-            output_file = pd.read_csv(expected_output, delimiter='\t', header=None)
-            read_names = output_file.iloc[:, 0].tolist()
-        assert good_read in read_names, "read_001 is in the output"
-        for poor in poor_reads:
-            assert poor not in read_names, f"'{poor}' was found in output!"
-
-# =============================================================================
-# Test runner
-# =============================================================================
 class TestFullPipeline:
     def test_complete_pipeline(self, multiple_assemblies, sample_bins):
         """
@@ -138,27 +97,21 @@ class TestFullPipeline:
         # Step 1: Align
         def is_valid_paf(result):
             return result and os.path.exists(result) and os.path.getsize(result) > 0 
-
         pipeline_results = []
+        result = run_alignment(multiple_assemblies, sample_bins)
+        pipeline_results.append(result)
+        assert any(is_valid_paf(r) for r in pipeline_results), "At least one PAF file should be created and not empty!"
 
-        for assembly in multiple_assemblies:
-            for bin in sample_bins:
-                assembly_base=os.path.basename(assembly)
-                assembly_name=os.path.splitext(assembly_base)[0]
-                bin_base=os.path.basename(bin)
-                bin_name=os.path.splitext(bin_base)[0]
-                output_name=assembly_name+"_"+bin_name+".paf"
-                output_path=(output_name)
-                result = run_alignment(assembly, bin, output_path)
-                pipeline_results.append(result)
-
-        assert any(is_valid_paf(r) for r in pipeline_results), "At least one PAF file should be created and not empty"
-
-        # Step 2: Parse
-
-        # Step 3: Map contigs
-
-        # Step 4: Extract unbinned
+        good_reads = "read_001"
+        poor_reads = ["read_002", "read_003", "read_004"]
+        PAF_parsing(results)
+        for input_file in results:
+            expected_output = os.path.splitext(input_file)[0] + ".tsv"
+            output_file = pd.read_csv(expected_output, delimiter='\t', header=None)
+            read_names = output_file.iloc[:, 0].tolist()
+        assert good_read in read_names, "read_001 is in the output"
+        for poor in poor_reads:
+            assert poor not in read_names, f"'{poor}' was found in output!"
 
         print(f"✅ Pipeline processed {len(pipeline_results)} combinations")
 
