@@ -15,46 +15,87 @@ import subprocess # Needed to run external command sin python
 # =============================================================================
 # Actual functions to test
 # =============================================================================
-def build_minimap2_command(assembly, bins, output_path):
+def build_minimap2_command(assemblies, bins, output_path):
     """"Build the minimap2 command as a list - Need run_alignment to execute."""
     minimap = [
         "minimap2",
         "-x", "asm5",
-        assembly, bins,
+        assemblies, bins,
         "-o", output_path
     ]
-    return aligner
+    return minimap
 
-def run_alignment(assembly, bin_files, output_path):
+def run_alignment(assemblies, bins):
     """Run minimap2 alignment and return PAF files"""
-    if isinstance(bins, str):
-        assembly_base=os.path.basename(assembly)
-        assembly_name=os.path.splitext(assembly_base)[0]
-        output_name=assembly_name+".paf"
-        output_path=(output_name)
-        aligner = build_minimap2_command(assembly, bin, output_path)
-        alignment = subprocess.run(aligner, check=True)
-        return output_path
-        except subprocess.CalledProcessError:
-            print("Minimap2 alignment failed for {assembly}")
-        return None
-    elif isinstance(bins, list):
-        with open("merged_bins.fa", "w") as merged:
-            for bin in bins:
-                with open(bin, "r") as input_bin:
-                    bin_content = input_bin.read()
-                    merged.write(bin_content)
-                    merged.write("\n")
-        assembly_base=os.path.basename(assembly)
-        assembly_name=os.path.splitext(assembly_base)[0]
-        output_name=assembly_name+".paf"
-        output_path=(output_name)
-        aligner = build_minimap2_command(assembly, bin, output_path)
-        alignment = subprocess.run(aligner, check=True)
-        return output_path
-        except subprocess.CalledProcessError:
-            print("Minimap2 alignment failed for {assembly}")
-        return None
+    if isinstance(assemblies, str):
+        assembly = assemblies
+        if isinstance(bins, str):
+            bin = bins
+            assembly_base=os.path.basename(assembly)
+            assembly_name=os.path.splitext(assembly_base)[0]
+            output_name=assembly_name+".paf"
+            output_path=(output_name)
+            aligner = build_minimap2_command(assembly, bin, output_path)
+            try:
+                alignment = subprocess.run(aligner, check=True)
+                return output_path
+            except subprocess.CalledProcessError:
+                print("Minimap2 alignment failed for {assembly}")
+            return None
+        elif isinstance(bins, list):
+            with open("merged_bins.fa", "w") as merged:
+                for bin in bins:
+                    with open(bin, "r") as input_bin:
+                        bin_content = input_bin.read()
+                        merged.write(bin_content)
+                        merged.write("\n")
+            bins = "merged_bins.fa"
+            assembly_base=os.path.basename(assembly)
+            assembly_name=os.path.splitext(assembly_base)[0]
+            output_name=assembly_name+".paf"
+            output_path=(output_name)
+            aligner = build_minimap2_command(assembly, bins, output_path)
+            try:
+                alignment = subprocess.run(aligner, check=True)
+                return output_path
+            except subprocess.CalledProcessError:
+                print("Minimap2 alignment failed for {assembly}")
+            return None
+    if isinstance(assemblies, list):
+        if isinstance(bins, str):
+            bin = bins
+            for assembly in assemblies:
+                assembly_base=os.path.basename(assembly)
+                assembly_name=os.path.splitext(assembly_base)[0]
+                output_name=assembly_name+".paf"
+                output_path=(output_name)
+                aligner = build_minimap2_command(assembly, bin, output_path)
+                try:
+                    alignment = subprocess.run(aligner, check=True)
+                    return output_path
+                except subprocess.CalledProcessError:
+                    print("Minimap2 alignment failed for {assembly}")
+                return None
+        elif isinstance(bins, list):
+            with open("merged_bins.fa", "w") as merged:
+                for bin in bins:
+                    with open(bin, "r") as input_bin:
+                        bin_content = input_bin.read()
+                        merged.write(bin_content)
+                        merged.write("\n")
+            bins = "merged_bins.fa"
+            for assembly in assemblies:
+                assembly_base=os.path.basename(assembly)
+                assembly_name=os.path.splitext(assembly_base)[0]
+                output_name=assembly_name+".paf"
+                output_path=(output_name)
+                aligner = build_minimap2_command(assembly, bins, output_path)
+                try:
+                    alignment = subprocess.run(aligner, check=True)
+                    return output_path
+                except subprocess.CalledProcessError:
+                    print("Minimap2 alignment failed for {assembly}")
+                return None
 
 # =============================================================================
 # Create the mock data for testing
@@ -147,34 +188,17 @@ def sample_bins():
 
 def test_single_assembly(single_assembly, sample_bins):
     """Test that minimap2 actually runs and produces output on a single assembly"""
-    for assembly in single_assembly:
-        for bin in sample_bins:
-            assembly_base=os.path.basename(assembly)
-            assembly_name=os.path.splitext(assembly_base)[0]
-            bin_base=os.path.basename(bin)
-            bin_name=os.path.splitext(bin_base)[0]
-            output_name=assembly_name+"_"+bin_name+".paf"
-            output_path=(output_name)
-            results = run_alignment(assembly, bin, output_path)
-            assert os.path.exists(results), "PAF file should be created"
-            assert os.path.getsize(results) > 0, "PAF file should not be empty"
+    results = run_alignment(single_assembly, sample_bins)
+    assert os.path.exists(results), "PAF file should be created"
+    assert os.path.getsize(results) > 0, "PAF file should not be empty"
 
 def test_multiple_assemblies(multiple_assemblies, sample_bins):
     """Test that minimap2 runs and produces proper output with multiple assemblies"""
     def is_valid_paf(result):
         return result and os.path.exists(result) and os.path.getsize(result) > 0
-    
     results = []
-    for assembly in multiple_assemblies:
-        for bin in sample_bins:
-            assembly_base=os.path.basename(assembly)
-            assembly_name=os.path.splitext(assembly_base)[0]
-            bin_base=os.path.basename(bin)
-            bin_name=os.path.splitext(bin_base)[0]
-            output_name=assembly_name+"_"+bin_name+".paf"
-            output_path=(output_name)
-            result = run_alignment(assembly, bin, output_path)
-            results.append(result)
+    result = run_alignment(multiple_assemblies, sample_bins)
+    results.append(result)
     assert any(is_valid_paf(r) for r in results), "At least one PAF file should be created and not empty"
 
 @pytest.fixture(autouse=True)
