@@ -21,7 +21,8 @@ def build_minimap2_command(bins, assemblies, output_path):
     minimap = [
         "minimap2",
         "-x", "asm5",
-        bins, assemblies,
+        bins,
+        assemblies,
         "-o", output_path
     ]
     return minimap

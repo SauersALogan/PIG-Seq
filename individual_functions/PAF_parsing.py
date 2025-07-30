@@ -41,9 +41,9 @@ def PAF_parsing(paf_files, identity_threshold = 0.95, coverage_threshold = 0.8, 
         output_path=(output_name)
         paf['Identity']=paf_matches/paf_alignment_length
         paf['Coverage']=(paf_query_end - paf_query_start)/paf_query_length
-        good_alignments = paf[(paf['Identity'] > identity_threshold) &
-        (paf['Coverage'] > coverage_threshold) &
-        (paf_alignment_quality > quality_threshold)]
+        good_alignments = paf[(paf['Identity'] >= identity_threshold) &
+        (paf['Coverage'] >= coverage_threshold) &
+        (paf_alignment_quality >= quality_threshold)]
         good_alignments.to_csv(f"{output_path}.tsv",
             sep='\t',header=False,index=False)
     elif isinstance(paf_files, list):

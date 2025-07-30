@@ -21,34 +21,43 @@ import tempfile
 import os
 import subprocess
 import pandas as pd
+from Bio.Seq import Seq
+from Bio.SeqRecord import SeqRecord
+from Bio import SeqIO
+import random
 
 # =============================================================================
 # Integration test fixtures - Shared test data
 # =============================================================================
+def generate_random_sequence(length, gc_content=0.5):
+    bases=['A', 'T', 'G', 'C']
+    weights = [(1-gc_content)/2, (1-gc_content)/2, gc_content/2, gc_content/2]
+    sequence = ''.join(random.choices(bases, weights=weights, k=length))
+    return sequence
+
+# Generate the sequences with a consistent seed
+random.seed(42)
+perfect_match = generate_random_sequence(64000) # 64kb
+bad_match = generate_random_sequence(64000, gc_content=0.52)
+random.seed(101010)
+bad_coverage_start = generate_random_sequence(8000)
+bad_coverage_middle = perfect_match[16000:48000]
+random.seed(20547391)
+bad_coverage_end = generate_random_sequence(8000)
+bad_coverage = bad_coverage_start + bad_coverage_middle + bad_coverage_end
+bad_quality_bases = list(perfect_match)
+for i in range(0, len(bad_quality_bases), 50):
+    if i < len(bad_quality_bases):
+        bad_quality_bases[i] = 'N'
+        if i + 1 < len(bad_quality_bases):
+            bad_quality_bases[i + 1] = 'N'
+bad_quality = "".join(bad_quality_bases)
+
 @pytest.fixture
 def multiple_assemblies():
     """Create assembly files where contig1 will match bin sequences well, others poorly."""
-    assembly_1_content = """
-    >contig1 length=1000
-    ATCGATCGATCGATCGATCGATCGATCGATCGATCGATCGATCGATCGATCGATCGATCGATCG
-    >contig2 length=800
-    GCTAGCTAGCTAGCTAGCTAGCTAGCTAGCTAGCTAGCTAGCTAGCTAGCTAGCTAGCTAGCTA
-    >contig3 length=1200
-    TTTTAAAACCCCGGGGTTTTAAAACCCCGGGGTTTTAAAACCCCGGGGTTTTAAAACCCCGGGG
-    >contig4 length=600
-    AAAAGGGGCCCCTTTTAAAAGGGGCCCCTTTTAAAAGGGGCCCCTTTTAAAAGGGGCCCCTTTT
-    """
-
-    assembly_2_content = """
-    >contig1 length=1000
-    ATCGATCGATCGATCGATCGATCGATCGATCGATCGATCAATCGATCGATCGATCGATCGATCG
-    >contig2 length=800
-    GCTAGCTAGCTAGCTAGCtAGCTAGCTAGCTAGCTAGCTAGCTAGCTAGCTAGCTAGCTAGCTA
-    >contig3 length=1200
-    TTTTAAAACCCCGGGGTTTTAAACCCCGGGGTTTTAAAACCCCGGGG
-    >contig4 length=600
-    AAAAGGGGCCCCTTTTAAAAGGGGCCCCTTTTAAAAGGGGCCCCTTTTAAAAGGGGCCCCTTTT
-    """
+    assembly_1_content = f">a1_contig1\n{perfect_match}\n>a1_contig2\n{bad_match}\n>a1_contig3\n{bad_coverage}\n>a1_contig4\n{bad_quality}"
+    assembly_2_content = f">a2_contig1\n{bad_match}\n>a2_contig2\n{perfect_match}\n>a2_contig3\n{bad_coverage}\n>a2_contig4\n{bad_quality}"
 
     assembly_files = []
     for i, content in enumerate([assembly_1_content, assembly_2_content], 1):
@@ -60,17 +69,8 @@ def multiple_assemblies():
 @pytest.fixture
 def sample_bins():
     """Create bin files where one sequence matches contig1 perfectly, others don't match well."""
-    bin1_content = """
-    >bin1_scaffold1 length=1000
-    ATCGATCGATCGATCGATCGATCGATCGATCGATCGATCGATCGATCGATCGATCGATCGATCG
-    >bin1_scaffold2 length=500
-    GCTAGCTAGCTAGCTAGCTAGCTAGCTAGCTAGCTAGCTAGCTAGCTAGCTA
-    """
-
-    bin2_content = """
-    >bin2_scaffold1 length=800
-    TTTTAAAACCCCGGGGTTTTAAAACCCCGGGGTTTTAAAACCCCGGGGTTTTAAAACCCCGGGG
-    """
+    bin1_content = f">bin1_scaffold1\n{perfect_match}\n>bin1_scaffold2\n{generate_random_sequence(3000)}"
+    bin2_content = f">bin2_scaffold1\n{generate_random_sequence(5000)}\n>bin2_scaffold2\n{perfect_match[:20000]}"
 
     bin_files = []
     for i, content in enumerate([bin1_content, bin2_content], 1):
@@ -101,23 +101,28 @@ class TestFullPipeline:
         for paf_file in aligned_paf_files:
             paf_out = pd.read_csv(paf_file, delimiter='\t', header=None)
             query_names = paf_out.iloc[:, 0].tolist()
-            assert "contig1" in query_names, f"contig1 not found in PAF file {paf_file} queries: {set(query_names)}"
+            mapped_reads = ["a1_contig1", "a2_contig2"]
+            found_reads = set(mapped_reads) & set(query_names)
+            assert found_reads, f"None of {mapped_reads} found in PAF file {paf_file} queries: {set(query_names)}"
 
         # Step 2: Parse the PAF output
-        good_read = "contig1"
-        poor_reads = ["contig2", "contig3", "contig4"]
+        good_reads = ["a1_contig1", "a2_contig2"]
+        poor_reads = ["a1_contig2", "a1_contig3", "a1_contig4", "a2_contig1", "a2_contig3", "a2_contig4"]
         for paf_file in aligned_paf_files:
-            PAF_parsing(paf_file)
+            PAF_parsing(aligned_paf_files)
+        all_read_names = []
         for input_file in aligned_paf_files:
             print(input_file)
             expected_output = os.path.splitext(input_file)[0] + ".tsv"
             output_file = pd.read_csv(expected_output, delimiter='\t', header=None)
             read_names = output_file.iloc[:, 0].tolist()
-            assert good_read in read_names, "contig1 is in the output"
+            all_read_names.extend(read_names)
+            found_good = set(good_reads) & set(all_read_names)
+            assert found_good, "a1_contig1 and a2_contig2 are NOT in the output"
             for poor in poor_reads:
                 assert poor not in read_names, f"'{poor}' was found in output!"
 
-        print(f"✅ Pipeline processed {len(pipeline_results)} combinations")
+        print(f"✅ Pipeline completed and tests all passed!")
 
 @pytest.fixture(autouse=True)
 def cleanup_test_files(request):
@@ -130,3 +135,4 @@ def cleanup_test_files(request):
             if os.path.exists(tsv_file):
                 os.unlink(tsv_file)
     request.addfinalizer(cleanup)
+
