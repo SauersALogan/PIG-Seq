@@ -134,5 +134,8 @@ def cleanup_test_files(request):
         for tsv_file in glob.glob("*.tsv"):
             if os.path.exists(tsv_file):
                 os.unlink(tsv_file)
+        for fasta in glob.glob("*.fa"):
+            if os.path.exists(fasta):
+                os.unlink(fasta)
     request.addfinalizer(cleanup)
 
