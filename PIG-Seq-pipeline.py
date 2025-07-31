@@ -31,6 +31,8 @@ parser = argparse.ArgumentParser(description="Script for processing contigs from
 parser.add_argument("--assemblies", nargs="+", required=True, help="The assembly files")
 parser.add_argument("--bins", nargs="+", required=True, help="The bin files")
 parser.add_argument("--output", required=True, help="Output directory")
+parser.add_argument("--sam_files", nargs="+", required=True, help="The directory containing SAM files")
+parser.add_argument("--gtf_files", nargs="+", required=True, help="The directory containing GTF files")
 
 ##################################################################################
 # Main workflow
@@ -54,6 +56,16 @@ if __name__ == "__main__":
                 bin_files.extend(glob.glob(os.path.join(pattern, "*.fasta")))
                 bin_files.extend(glob.glob(os.path.join(pattern, "*.fa")))
                 bin_files.extend(glob.glob(os.path.join(pattern, "*.fas")))
+
+    sam_files = []
+    for pattern in arg.sam_files:
+        sam_files.extend(glob.glob(pattern))
+    sam_files.sort()
+
+    gtf_files = []
+    for pattern in arg.gtf_files:
+        gtf_files.extend(glob.glob(pattern))
+    gtf_files.sort()
 
     # Display the files
     if assembly_files:
