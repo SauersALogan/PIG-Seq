@@ -30,8 +30,7 @@ def build_featureCounts (gtf_files, output_path, sam_files, threads, gene, gene_
     ]
     return featureCounts
 
-def execute_feature_counting(sam_file, gtf_file, threads = 2, gene = "CDS", gene_id = "gene_id")
-    count_tables = []
+def execute_feature_counting(sam_file, gtf_file, threads = 2, gene = "CDS", gene_id = "gene_id"):
     sam_base=os.path.basename(sam_file)
     sam_name=os.path.splitext(sam_base)[0]
     output_name=sam_name+".txt"
@@ -39,26 +38,27 @@ def execute_feature_counting(sam_file, gtf_file, threads = 2, gene = "CDS", gene
     Counter = build_featureCounts(gtf_file, output_path, sam_file, threads, gene, gene_id)
     try:
         counts = subprocess.run(Counter, check=True)
-        count_tables.append(output_path)
     except subprocess.CalledProcessError:
         print("featureCounts failed to process {sam_file}")
-    return(count_tables)
 
-def run_counter(sam_files, gtf_files, threads = 2, gene = "CDS", gene_id = "gene_id")
+def run_counter(sam_files, gtf_files, threads = 2, gene = "CDS", gene_id = "gene_id"):
     """Runs the counting function imported above on the actual data"""
+    count_tables = []
     if isinstance(sam_files, str):
         sam_file = sam_files
         gtf_file = gtf_files
-        execute_feature_counting(sam_file, gtf_file, threads, gene, gene_id)
-    elif isinstance(sam_files, list):
-        if isinstance(gtf_files, str):
-        gtf_files = gtf_file
+        result = execute_feature_counting(sam_file, gtf_file, threads, gene, gene_id)
+        count_tables.append(result)
+    elif isinstance(sam_files, list) and isinstance(gtf_files, str):
+        gtf_file = gtf_files
         for sam_file in sam_files:
-            execute_feature_counting(sam_file, gtf_file, threads, gene, gene_id)
-        if isinstance(gtf_files, list):
-            for gtf_file in gtf_files:
-                for sam_file in sam_files:
-                    execture_feature_counting(sam_file, gtf_file, threads, gene, gene_id)
+            result = execute_feature_counting(sam_file, gtf_file, threads, gene, gene_id)
+            count_tables.append(result)
+    elif isinstance(sam_files, list) and isinstance(gtf_files, list):
+        for sam_file, gtf_file in zip(sam_files, gtf_files):
+            result = execute_feature_counting(sam_file, gtf_file, threads, gene, gene_id)
+            count_tables.append(result)
+    return(count_tables)
 
 # =============================================================================
 # Create the mock data for testing
@@ -108,7 +108,7 @@ read6:TT 163     Contig6    17929   60      150M    =       18129350      CAGTCT
 
 @pytest.fixture
 def mock_gtf():
-"""Create a mock gtf file for FeatureCounts."""
+    """Create a mock gtf file for FeatureCounts."""
     gtf_content = gtf_content = """Contig1	Prokka	gene	1000	2500	.	+	.	gene_id "gene_001"; gene_name "hypothetical_protein_001";
 Contig1	Prokka	CDS	1200	2300	.	+	0	gene_id "gene_001"; gene_name "hypothetical_protein_001";
 Contig1	Prokka	gene	3000	4500	.	-	.	gene_id "gene_002"; gene_name "ABC_transporter";
@@ -135,15 +135,21 @@ Contig6	Prokka	CDS	15200	19800	.	+	0	gene_id "gene_009"; gene_name "hydrolase";
 # =============================================================================
 def test_single_sam(single_sam):
     """Test that the parsing function works on a single sam file"""
+    results = run_counter(single_sam, mock_gtf, threads=2, gene="CDS", gene_id="gene_id")
+    print(f"Created count files: {results}")
+    pass
 
-def test_multiple_pafs(multiple_pafs):
+def test_multiple_pafs(multiple_sams):
     """Test that parsing function works on multiple sam files"""
+    results = run_counter(multiple_sams, mock_gtf, threads=2, gene="CDS", gene_id="gene_id")
+    print(f"Created count files: {results}")
+    pass
 
-@pytest.fixture(autouse=True)
-def cleanup_paf_files(request):
-    def cleanup():
-        import glob
-        for sam_file in glob.glob("*.sam"):
-            if os.path.exists(sam_file):
-                os.unlink(sam_file)
-    request.addfinalizer(cleanup)
+#@pytest.fixture(autouse=True)
+#def cleanup_paf_files(request):
+#    def cleanup():
+#        import glob
+#        for sam_file in glob.glob("*.sam"):
+#            if os.path.exists(sam_file):
+#                os.unlink(sam_file)
+#    request.addfinalizer(cleanup)
