@@ -1,0 +1,11 @@
+# Program:featureCounts v2.0.6; Command:"featureCounts" "-T" "2" "-t" "CDS" "-g" "gene_id" "-a" "/tmp/slurm.4020992/tmpncwh0it2_assembly1.gtf" "-o" "tmp_38ibmwb_sample1.txt" "/tmp/slurm.4020992/tmp_38ibmwb_sample1.paf" 
+Geneid	Chr	Start	End	Strand	Length	/tmp/slurm.4020992/tmp_38ibmwb_sample1.paf
+gene_001	Contig1	1200	2300	+	1101	0
+gene_002	Contig1	3200	4300	-	1101	0
+gene_003	Contig2	50200	51800	+	1601	0
+gene_004	Contig2	70200	74800	+	4601	0
+gene_005	Contig3	60200	64800	-	4601	0
+gene_006	Contig3	70200	74800	+	4601	0
+gene_007	Contig4	75200	79800	+	4601	0
+gene_008	Contig5	76200	77800	-	1601	0
+gene_009	Contig6	15200	19800	+	4601	0

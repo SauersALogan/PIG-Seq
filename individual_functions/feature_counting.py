@@ -35,29 +35,36 @@ def execute_feature_counting(sam_file, gtf_file, threads = 2, gene = "CDS", gene
     sam_name=os.path.splitext(sam_base)[0]
     output_name=sam_name+".txt"
     output_path=(output_name)
+    print(f"DEBUG: Output path will be: {output_path}")
     Counter = build_featureCounts(gtf_file, output_path, sam_file, threads, gene, gene_id)
     try:
-        counts = subprocess.run(Counter, check=True)
+        subprocess.run(Counter, check=True)
     except subprocess.CalledProcessError:
         print("featureCounts failed to process {sam_file}")
+    return(output_path)
 
 def run_counter(sam_files, gtf_files, threads = 2, gene = "CDS", gene_id = "gene_id"):
     """Runs the counting function imported above on the actual data"""
     count_tables = []
+    print(f"DEBUG: run_counter called with sam_files={sam_files}, type={type(sam_files)}")
+    print(f"DEBUG: gtf_files={gtf_files}, type={type(gtf_files)}")
     if isinstance(sam_files, str):
         sam_file = sam_files
         gtf_file = gtf_files
-        result = execute_feature_counting(sam_file, gtf_file, threads, gene, gene_id)
-        count_tables.append(result)
+        counts = execute_feature_counting(sam_file, gtf_file, threads, gene, gene_id)
+        print(f"DEBUG: execute_feature_counting returned: {counts}")
+        count_tables.append(counts)
     elif isinstance(sam_files, list) and isinstance(gtf_files, str):
         gtf_file = gtf_files
         for sam_file in sam_files:
-            result = execute_feature_counting(sam_file, gtf_file, threads, gene, gene_id)
-            count_tables.append(result)
+            counts = execute_feature_counting(sam_file, gtf_file, threads, gene, gene_id)
+            print(f"DEBUG: execute_feature_counting returned: {counts}")
+            count_tables.append(counts)
     elif isinstance(sam_files, list) and isinstance(gtf_files, list):
         for sam_file, gtf_file in zip(sam_files, gtf_files):
-            result = execute_feature_counting(sam_file, gtf_file, threads, gene, gene_id)
-            count_tables.append(result)
+            counts = execute_feature_counting(sam_file, gtf_file, threads, gene, gene_id)
+            print(f"DEBUG: execute_feature_counting returned: {counts}")
+            count_tables.append(counts)
     return(count_tables)
 
 # =============================================================================
@@ -80,6 +87,11 @@ read5:XX 147     Contig5    77222   60      129M    =       77025-326     GTCAAT
 read6:TT 163     Contig6    17929   60      150M    =       18129350      CAGTCTCCCGCATATGCAATAACCCGTTTGACCAGGATATTGTTGTTATAATAAAATGCGATGATATCGCCGGTCTTGTATTTATTTCCGTTCAGCGCCACTACGATGTCTTCCTCCTGCAGCGACTCCGTCACGGAAGTTCCGCTGATC        III9IIIIIIII--IIIIIIIIIIIII9II9IIIIIIIIIIIIIIIIIII-IIIIIIIIIIIIIIIIIIIIIIIII-IIIIIIIIIIIIIIII9I9I9IIIII-IIII9IIIIIIIIII9II-999I99I9I--9IIIII99-IIII-II        NM:i:2  MD:Z:113A19T16  MC:Z:150M       AS:i:140     XS:i:0
 """
 
+    with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='_sample1.sam') as tmp:
+        tmp.write(sam_content)
+        sam_file = tmp.name
+    return [sam_file]
+
 @pytest.fixture
 def multiple_sams():
     """Create multiple SAM files for unit testing."""
@@ -101,7 +113,7 @@ read6:TT 163     Contig6    17929   60      150M    =       18129350      CAGTCT
 
     sam_files = []
     for i, content in enumerate([sam_1_content, sam_2_content], 1):
-        with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix=f'_assembly{i}.paf') as tmp:
+        with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix=f'_sample{i}.paf') as tmp:
             tmp.write(content)
             sam_files.append(tmp.name)
     return sam_files
@@ -128,22 +140,37 @@ Contig5	Prokka	CDS	76200	77800	.	-	0	gene_id "gene_008"; gene_name "oxidoreducta
 Contig6	Prokka	gene	15000	20000	.	+	.	gene_id "gene_009"; gene_name "hydrolase";
 Contig6	Prokka	CDS	15200	19800	.	+	0	gene_id "gene_009"; gene_name "hydrolase";
 """
-    return gtf_content
+    with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='_assembly1.gtf') as tmp:
+        tmp.write(gtf_content)
+        gtf_file = tmp.name
+    return [gtf_file]
 
 # =============================================================================
 # Setup the actual tests
 # =============================================================================
-def test_single_sam(single_sam):
+def test_single_sam(single_sam, mock_gtf):
     """Test that the parsing function works on a single sam file"""
     results = run_counter(single_sam, mock_gtf, threads=2, gene="CDS", gene_id="gene_id")
-    print(f"Created count files: {results}")
-    pass
+    for file in results:
+        if os.path.exists(file):
+            print(f"DEBUG: Output file {file} was created successfully")
+            file_size = os.path.getsize(file)
+            assert file_size > 0, f"Output file {file} is empty!"
+            print(f"DEBUG: File size: {file_size} bytes")
+        else:
+            print(f"DEBUG: WARNING - Output file {file} was NOT created")
 
-def test_multiple_pafs(multiple_sams):
+def test_multiple_sams(multiple_sams, mock_gtf):
     """Test that parsing function works on multiple sam files"""
     results = run_counter(multiple_sams, mock_gtf, threads=2, gene="CDS", gene_id="gene_id")
-    print(f"Created count files: {results}")
-    pass
+    for file in results:
+        if os.path.exists(file):
+            print(f"DEBUG: Output file {file} was created successfully")
+            file_size = os.path.getsize(file)
+            assert file_size > 0, f"Output file {file} is empty!"
+            print(f"DEBUG: File size: {file_size} bytes")
+        else:
+            print(f"DEBUG: WARNING - Output file {file} was NOT created")
 
 #@pytest.fixture(autouse=True)
 #def cleanup_paf_files(request):
