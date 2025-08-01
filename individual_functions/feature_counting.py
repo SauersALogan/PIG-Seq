@@ -172,11 +172,15 @@ def test_multiple_sams(multiple_sams, mock_gtf):
         else:
             print(f"DEBUG: WARNING - Output file {file} was NOT created")
 
-#@pytest.fixture(autouse=True)
-#def cleanup_paf_files(request):
-#    def cleanup():
-#        import glob
-#        for sam_file in glob.glob("*.sam"):
-#            if os.path.exists(sam_file):
-#                os.unlink(sam_file)
-#    request.addfinalizer(cleanup)
+@pytest.fixture(autouse=True)
+def cleanup_paf_files(request):
+    def cleanup():
+        import glob
+        for file in glob.glob("*.txt"):
+            if os.path.exists(file):
+                os.unlink(file)
+        for file in glob.glob(".txt.summary"):
+            if os.path.exists(file):
+                os.unlink(file)
+    request.addfinalizer(cleanup)
+
