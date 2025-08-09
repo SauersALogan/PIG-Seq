@@ -79,6 +79,73 @@ def sample_bins():
             bin_files.append(tmp.name)
     return bin_files
 
+@pytest.fixture
+def mock_gtf_files(multiple_assemblies):
+    """Create GTF files corresponding to the assembly files."""
+    gtf_files = []
+
+    # GTF content for assembly 1 (a1_contig1, a1_contig2, a1_contig3, a1_contig4)
+    gtf1_content = """a1_contig1	prokka	CDS	100	500	.	+	0	gene_id "GENE001"; product "hypothetical protein"
+a1_contig1	prokka	CDS	600	1200	.	-	0	gene_id "GENE002"; product "DNA polymerase"
+a1_contig1	prokka	CDS	1500	2000	.	+	0	gene_id "GENE003"; product "ribosomal protein"
+a1_contig2	prokka	CDS	200	800	.	+	0	gene_id "GENE004"; product "membrane protein"
+a1_contig2	prokka	CDS	1000	1600	.	-	0	gene_id "GENE005"; product "ATP synthase"
+a1_contig3	prokka	CDS	300	900	.	+	0	gene_id "GENE006"; product "transcriptase"
+a1_contig4	prokka	CDS	150	750	.	+	0	gene_id "GENE007"; product "helicase"
+"""
+
+    # GTF content for assembly 2 (a2_contig1, a2_contig2, a2_contig3, a2_contig4)
+    gtf2_content = """a2_contig1	prokka	CDS	100	500	.	+	0	gene_id "GENE008"; product "hypothetical protein"
+a2_contig1	prokka	CDS	600	1200	.	-	0	gene_id "GENE009"; product "DNA polymerase"
+a2_contig2	prokka	CDS	200	800	.	+	0	gene_id "GENE010"; product "membrane protein"
+a2_contig2	prokka	CDS	1000	1600	.	-	0	gene_id "GENE011"; product "ATP synthase"
+a2_contig2	prokka	CDS	1800	2400	.	+	0	gene_id "GENE012"; product "kinase"
+a2_contig3	prokka	CDS	300	900	.	+	0	gene_id "GENE013"; product "transcriptase"
+a2_contig4	prokka	CDS	150	750	.	+	0	gene_id "GENE014"; product "helicase"
+"""
+
+    for i, content in enumerate([gtf1_content, gtf2_content], 1):
+        with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix=f'_assembly{i}.gtf') as tmp:
+            tmp.write(content)
+            gtf_files.append(tmp.name)
+    return gtf_files
+
+@pytest.fixture
+def mock_sam_files(multiple_assemblies):
+    """Create SAM files with reads mapping to the assembly contigs."""
+    sam_files = []
+
+    # SAM header and content for assembly 1
+    sam1_content = """@HD	VN:1.6	SO:coordinate
+@SQ	SN:a1_contig1	LN:64000
+@SQ	SN:a1_contig2	LN:64000
+@SQ	SN:a1_contig3	LN:48000
+@SQ	SN:a1_contig4	LN:64000
+read1	0	a1_contig1	150	60	100M	*	0	0	ACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGT	IIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII
+read2	0	a1_contig1	300	60	100M	*	0	0	ACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGT	IIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII
+read3	0	a1_contig1	700	60	100M	*	0	0	ACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGT	IIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII
+read4	0	a1_contig2	250	60	100M	*	0	0	ACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGT	IIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII
+read5	0	a1_contig3	400	60	100M	*	0	0	ACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGT	IIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII
+"""
+
+    sam2_content = """@HD	VN:1.6	SO:coordinate
+@SQ	SN:a2_contig1	LN:64000
+@SQ	SN:a2_contig2	LN:64000
+@SQ	SN:a2_contig3	LN:48000
+@SQ	SN:a2_contig4	LN:64000
+read6	0	a2_contig1	150	60	100M	*	0	0	ACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGT	IIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII
+read7	0	a2_contig2	200	60	100M	*	0	0	ACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGT	IIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII
+read8	0	a2_contig2	1100	60	100M	*	0	0	ACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGT	IIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII
+read9	0	a2_contig2	1900	60	100M	*	0	0	ACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGT	IIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII
+read10	0	a2_contig3	350	60	100M	*	0	0	ACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGT	IIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII
+"""
+
+    for i, content in enumerate([sam1_content, sam2_content], 1):
+        with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix=f'_sample{i}.sam') as tmp:
+            tmp.write(content)
+            sam_files.append(tmp.name)
+    return sam_files
+
 # =============================================================================
 # Import the functions from the individual_functions folder
 # =============================================================================
