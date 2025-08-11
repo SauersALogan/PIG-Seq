@@ -42,8 +42,25 @@ def PAF_parsing(paf_file, identity_threshold = 0.95, coverage_threshold = 0.8, q
     good_alignments = paf[(paf['Identity'] > identity_threshold) &
     (paf['Coverage'] > coverage_threshold) &
     (paf_alignment_quality > quality_threshold)]
-    good_alignments.to_csv(f"{output_path}.tsv",
-        sep='\t',header=False,index=False)
+    print(f"DEBUG: Content in good alignments is:")
+    print(f"{good_alignments}")
+    mapping = good_alignments[[0, 5]].drop_duplicates()
+    mapping.columns = ['Contig', 'Bin']
+    print(f"DEBUG: Content in mapping is:")
+    print(f"DEBUG: {mapping}")
+    passed_contigs = mapping['Contig'].unique()
+    all_contigs = paf[0].unique()
+    failed_contigs = set(all_contigs) - set(passed_contigs)
+    unbinned_contigs = pd.DataFrame({
+        'Contig': list(failed_contigs),
+        'Bin': ['unbinned'] * len(failed_contigs)
+    })
+    final_mapping = pd.concat([mapping, unbinned_contigs], ignore_index = True)
+    mapping_output = f"{output_path}_contigs_to_bin_mapping.txt"
+    final_mapping.to_csv(mapping_output, sep="\t", header=True, index=False)
+    print(f"Contig-to-bin mapping file written to: {mapping_output}")
+    print(f"The map has the following content:")
+    print(f"{final_mapping}")
 
 def run_paf_parsing(paf_files, identity_threshold = 0.95, coverage_threshold = 0.8, quality_threshold = 40):
     """Parse PAF files to select bins meeting user requirement specifications"""
@@ -97,29 +114,35 @@ read_004\t7000\t3000\t6750\t+\tcontig_7\t55000\t7500\t11250\t3713\t3750\t21"""
 # =============================================================================
 def test_single_paf(single_paf):
     """Test that the parsing function works on a single paf file"""
-    good_read = "read_001"
-    poor_reads = ["read_002", "read_003", "read_004"]
+    binned_read = "read_001"
+    unbinned_reads = ["read_002", "read_003", "read_004"]
     run_paf_parsing(single_paf)
     for input_file in single_paf:
-        expected_output = os.path.splitext(input_file)[0] + ".tsv"
-        output_file = pd.read_csv(expected_output, delimiter='\t', header=None)
+        expected_output = os.path.splitext(input_file)[0] + "_contigs_to_bin_mapping.txt"
+        output_file = pd.read_csv(expected_output, delimiter='\t', header=0)
         read_names = output_file.iloc[:, 0].tolist()
-        assert good_read in read_names, "read_001 is in the output"
-        for poor in poor_reads:
-            assert poor not in read_names, f"'{poor}' was found in output!"
+        print(f"DEBUG: Content in output file is:")
+        print(f"{output_file}")
+        binned = output_file.loc[output_file['Contig'] == binned_read]
+        unbinned = output_file.loc[output_file['Contig'].isin(unbinned_reads)]
+        assert binned['Bin'].iloc[0] in ["contig_1", "contig_4"], f"read_001 incorrectly assigned to {binned['Bin'].iloc[0]}"
+        for _, row in unbinned.iterrows():
+            assert row['Bin'] == "unbinned", f"{row['Contig']} should be unbinned but assigned to {row['Bin']}!"
 
 def test_multiple_pafs(multiple_pafs):
     """Test that parsing function works on multiple pafs"""
-    good_read = "read_001"
-    poor_reads = ["read_002", "read_003", "read_004"]
+    binned_read = "read_001"
+    unbinned_reads = ["read_002", "read_003", "read_004"]
     run_paf_parsing(multiple_pafs)
     for input_file in multiple_pafs:
-        expected_output = os.path.splitext(input_file)[0] + ".tsv"
-        output_file = pd.read_csv(expected_output, delimiter='\t', header=None)
+        expected_output = os.path.splitext(input_file)[0] + "_contigs_to_bin_mapping.txt"
+        output_file = pd.read_csv(expected_output, delimiter='\t', header=0)
         read_names = output_file.iloc[:, 0].tolist()
-        assert good_read in read_names, "read_001 is in the output"
-        for poor in poor_reads:
-            assert poor not in read_names, f"'{poor}' was found in output!"
+        binned = output_file.loc[output_file['Contig'] == binned_read]
+        unbinned = output_file.loc[output_file['Contig'].isin(unbinned_reads)]
+        assert binned['Bin'].iloc[0] in ["contig_1", "contig_4"], f"read_001 incorrectly assigned to {binned['Bin'].iloc[0]}"
+        for _, row in unbinned.iterrows():
+            assert row['Bin'] == "unbinned", f"{row['Contig']} should be unbinned but assigned to {row['Bin']}!"
 
 @pytest.fixture(autouse=True)
 def cleanup_paf_files(request):
