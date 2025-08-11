@@ -17,63 +17,42 @@ import pandas as pd
 # =============================================================================
 # Actual functions to test
 # =============================================================================
-def PAF_parsing(paf_files, identity_threshold = 0.95, coverage_threshold = 0.8, quality_threshold = 40):
+def PAF_parsing(paf_file, identity_threshold = 0.95, coverage_threshold = 0.8, quality_threshold = 40):
+    paf = pd.read_csv(paf_file, delimiter='\t', header=None, dtype={
+        1: 'int64', # query_length
+        2: 'int64', # query_start
+        3: 'int64', # query_end
+        8: 'int64', # target_end
+        9: 'int64', # matches
+        10: 'int64', # alignment_length
+        11: 'int64' # mapping_quality
+    })
+    paf_query_end = paf.iloc[:,3]
+    paf_query_start = paf.iloc[:,2]
+    paf_alignment_length = paf.iloc[:,10]
+    paf_matches = paf.iloc[:,9]
+    paf_query_length = paf.iloc[:,1]
+    paf_alignment_quality = paf.iloc[:,11]
+    paf_base=os.path.basename(paf_file)
+    paf_name=os.path.splitext(paf_file)[0]
+    output_name=paf_name
+    output_path=(output_name)
+    paf['Identity']=paf_matches/paf_alignment_length
+    paf['Coverage']=(paf_query_end - paf_query_start)/paf_query_length
+    good_alignments = paf[(paf['Identity'] > identity_threshold) &
+    (paf['Coverage'] > coverage_threshold) &
+    (paf_alignment_quality > quality_threshold)]
+    good_alignments.to_csv(f"{output_path}.tsv",
+        sep='\t',header=False,index=False)
+
+def run_paf_parsing(paf_files, identity_threshold = 0.95, coverage_threshold = 0.8, quality_threshold = 40):
     """Parse PAF files to select bins meeting user requirement specifications"""
     if isinstance(paf_files, str):
-        paf = pd.read_csv(paf_files, delimiter='\t', header=None, dtype={
-            1: 'int64', # query_length
-            2: 'int64', # query_start
-            3: 'int64', # query_end
-            8: 'int64', # target_end
-            9: 'int64', # matches
-            10: 'int64', # alignment_length
-            11: 'int64' # mapping_quality
-        })
-        paf_query_end = paf.iloc[:,3]
-        paf_query_start = paf.iloc[:,2]
-        paf_alignment_length = paf.iloc[:,10]
-        paf_matches = paf.iloc[:,9]
-        paf_query_length = paf.iloc[:,1]
-        paf_alignment_quality = paf.iloc[:,11]
-        paf_base=os.path.basename(paf_files)
-        paf_name=os.path.splitext(paf_files)[0]
-        output_name=paf_name
-        output_path=(output_name)
-        paf['Identity']=paf_matches/paf_alignment_length
-        paf['Coverage']=(paf_query_end - paf_query_start)/paf_query_length
-        good_alignments = paf[(paf['Identity'] >= identity_threshold) &
-        (paf['Coverage'] >= coverage_threshold) &
-        (paf_alignment_quality >= quality_threshold)]
-        good_alignments.to_csv(f"{output_path}.tsv",
-            sep='\t',header=False,index=False)
+        paf_file = paf_files
+        PAF_parsing(paf_file)
     elif isinstance(paf_files, list):
-        for file in paf_files:
-            paf = pd.read_csv(file, delimiter='\t', header=None, dtype={
-                1: 'int64', # query_length
-                2: 'int64', # query_start
-                3: 'int64', # query_end
-                8: 'int64', # target_end
-                9: 'int64', # matches
-                10: 'int64', # alignment_length
-                11: 'int64' # mapping_quality
-                })
-            paf_query_end = paf.iloc[:,3]
-            paf_query_start = paf.iloc[:,2]
-            paf_alignment_length = paf.iloc[:,10]
-            paf_matches = paf.iloc[:,9]
-            paf_query_length = paf.iloc[:,1]
-            paf_alignment_quality = paf.iloc[:,11]
-            paf_base=os.path.basename(file)
-            paf_name=os.path.splitext(file)[0]
-            output_name=paf_name
-            output_path=(output_name)
-            paf['Identity']=paf_matches/paf_alignment_length
-            paf['Coverage']=(paf_query_end - paf_query_start)/paf_query_length
-            good_alignments = paf[(paf['Identity'] > identity_threshold) &
-            (paf['Coverage'] > coverage_threshold) &
-            (paf_alignment_quality > quality_threshold)]
-            good_alignments.to_csv(f"{output_path}.tsv",
-                sep='\t',header=False,index=False)
+        for paf_file in paf_files:
+            PAF_parsing(paf_file)
     else:
         print("There is no valid PAF file found")
 
@@ -120,7 +99,7 @@ def test_single_paf(single_paf):
     """Test that the parsing function works on a single paf file"""
     good_read = "read_001"
     poor_reads = ["read_002", "read_003", "read_004"]
-    PAF_parsing(single_paf)
+    run_paf_parsing(single_paf)
     for input_file in single_paf:
         expected_output = os.path.splitext(input_file)[0] + ".tsv"
         output_file = pd.read_csv(expected_output, delimiter='\t', header=None)
@@ -133,7 +112,7 @@ def test_multiple_pafs(multiple_pafs):
     """Test that parsing function works on multiple pafs"""
     good_read = "read_001"
     poor_reads = ["read_002", "read_003", "read_004"]
-    PAF_parsing(multiple_pafs)
+    run_paf_parsing(multiple_pafs)
     for input_file in multiple_pafs:
         expected_output = os.path.splitext(input_file)[0] + ".tsv"
         output_file = pd.read_csv(expected_output, delimiter='\t', header=None)
