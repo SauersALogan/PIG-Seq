@@ -150,7 +150,7 @@ read10	0	a2_contig3	350	60	100M	*	0	0	ACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTAC
 # Import the functions from the individual_functions folder
 # =============================================================================
 from individual_functions.contig_mapping import build_minimap2_command, run_alignment
-from individual_functions.PAF_parsing import PAF_parsing
+from individual_functions.PAF_parsing import PAF_parsing, run_paf_parsing
 
 # =============================================================================
 # Integration test - Test functions working together
@@ -176,7 +176,7 @@ class TestFullPipeline:
         good_reads = ["a1_contig1", "a2_contig2"]
         poor_reads = ["a1_contig2", "a1_contig3", "a1_contig4", "a2_contig1", "a2_contig3", "a2_contig4"]
         for paf_file in aligned_paf_files:
-            PAF_parsing(aligned_paf_files)
+            run_paf_parsing(aligned_paf_files)
         all_read_names = []
         for input_file in aligned_paf_files:
             print(input_file)
