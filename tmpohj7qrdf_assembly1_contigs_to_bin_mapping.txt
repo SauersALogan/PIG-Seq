@@ -1,4 +1,0 @@
-Contig	Bin
-a1_contig1	bin1_scaffold1
-a1_contig3	unbinned
-a1_contig4	unbinned

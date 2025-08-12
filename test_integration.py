@@ -205,5 +205,8 @@ def cleanup_test_files(request):
         for fasta in glob.glob("*.fa"):
             if os.path.exists(fasta):
                 os.unlink(fasta)
+        for txt_file in glob.glob("*.txt"):
+            if os.path.exists(txt_file):
+                os.unlink(txt_file)
     request.addfinalizer(cleanup)
 
