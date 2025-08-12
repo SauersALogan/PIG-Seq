@@ -151,6 +151,8 @@ read10	0	a2_contig3	350	60	100M	*	0	0	ACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTAC
 # =============================================================================
 from individual_functions.contig_mapping import build_minimap2_command, run_alignment
 from individual_functions.PAF_parsing import PAF_parsing, run_paf_parsing
+from individual_functions.feature_counting.py build_featureCounts, execute_feature_counting, run_counter
+from individual_functions.feature_parsing.py feature_parsing, run_parsing
 
 # =============================================================================
 # Integration test - Test functions working together
@@ -190,6 +192,41 @@ class TestFullPipeline:
             for _, row in unbinned.iterrows():
                 assert row['Bin'] == "unbinned", f"{row['Contig']} should be unbinned but assigned to {row['Bin']}!"
 
+        # Step 3: Count the features using a SAM and GTF file
+        results = run_counter(mock_sam_files, mock_gtf_files, threads=2, gene="CDS", gene_id="gene_id")
+        for file in results:
+            if os.path.exists(file):
+                print(f"DEBUG: Output file {file} was created successfully")
+                file_size = os.path.getsize(file)
+                assert file_size > 0, f"Output file {file} is empty!"
+                print(f"DEBUG: File size: {file_size} bytes")
+            else:
+                print(f"DEBUG: WARNING - Output file {file} was NOT created")
+
+        # Step 4: Parse the output featureCounts to assign the gene ids to bins contigs align well to, if no alignment than
+        # It is returned as unbinned as above
+        for input_file in multiple_features:
+        feature_base = os.path.basename(input_file)
+        feature_name = os.path.splitext(feature_base)[0]
+        output_name = feature_name + "binned_counts.txt"
+        output_path = output_name
+        if os.path.exists(output_path):
+            print(f"DEBUG: Output file {output_path} was created successfully")
+            file_size = os.path.getsize(output_path)
+            assert file_size > 0, f"Output file {output_path} is empty!"
+            print(f"DEBUG: File size: {file_size} bytes")
+            df = pd.read_csv(output_path, delimiter='\t')
+            contig6_rows = df[df['Chr'] == 'contig6']
+            contig1_rows = df[df['Chr'] == 'contig1']
+            contig3_rows = df[df['Chr'] == 'contig3']
+            contig4_rows = df[df['Chr'] == 'contig4']
+            assert(contig6_rows['binning'] == 'bin1').all(), "Not all contig6 entries assigned to bin1"
+            assert(contig1_rows['binning'] == 'bin1').all(), "Not all contig1 entries assigned to bin1"
+            assert(contig3_rows['binning'] == 'unbinned').all(), "Not all contig3 entries assigned to unbinned"
+            assert(contig4_rows['binning'] == 'unbinned').all(), "Not all contig4 entries assigned to unbinned"
+        else:
+            print(f"DEBUG: WARNING - Output file {output_path} was NOT created")
+
         print(f"✅ Pipeline completed and tests all passed!")
 
 @pytest.fixture(autouse=True)
@@ -208,5 +245,8 @@ def cleanup_test_files(request):
         for txt_file in glob.glob("*.txt"):
             if os.path.exists(txt_file):
                 os.unlink(txt_file)
+        for summary_file in glob.glob("*.txt.summary"):
+            if os.path.exists(summary_file):
+                os.unlink(summary_file)
     request.addfinalizer(cleanup)
 
