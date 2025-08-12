@@ -173,21 +173,22 @@ class TestFullPipeline:
             assert found_reads, f"None of {mapped_reads} found in PAF file {paf_file} queries: {set(query_names)}"
 
         # Step 2: Parse the PAF output
-        good_reads = ["a1_contig1", "a2_contig2"]
-        poor_reads = ["a1_contig2", "a1_contig3", "a1_contig4", "a2_contig1", "a2_contig3", "a2_contig4"]
+        binned_reads = ["a1_contig1", "a2_contig2"]
+        unbinned_reads = ["a1_contig2", "a1_contig3", "a1_contig4", "a2_contig1", "a2_contig3", "a2_contig4"]
         for paf_file in aligned_paf_files:
             run_paf_parsing(aligned_paf_files)
-        all_read_names = []
         for input_file in aligned_paf_files:
-            print(input_file)
-            expected_output = os.path.splitext(input_file)[0] + ".tsv"
-            output_file = pd.read_csv(expected_output, delimiter='\t', header=None)
+            expected_output = os.path.splitext(input_file)[0] + "_contigs_to_bin_mapping.txt"
+            output_file = pd.read_csv(expected_output, delimiter='\t', header=0)
             read_names = output_file.iloc[:, 0].tolist()
-            all_read_names.extend(read_names)
-            found_good = set(good_reads) & set(all_read_names)
-            assert found_good, "a1_contig1 and a2_contig2 are NOT in the output"
-            for poor in poor_reads:
-                assert poor not in read_names, f"'{poor}' was found in output!"
+            print(f"DEBUG: Content in output file is:")
+            print(f"{output_file}")
+            binned = output_file.loc[output_file['Contig'].isin(binned_reads)]
+            unbinned = output_file.loc[output_file['Contig'].isin(unbinned_reads)]
+            for _, row in binned.iterrows():
+                assert row['Bin'] == "bin1_scaffold1", f"{row['Contig']} incorrectly assigned to {binned['Bin'].iloc[0]}"
+            for _, row in unbinned.iterrows():
+                assert row['Bin'] == "unbinned", f"{row['Contig']} should be unbinned but assigned to {row['Bin']}!"
 
         print(f"✅ Pipeline completed and tests all passed!")
 
