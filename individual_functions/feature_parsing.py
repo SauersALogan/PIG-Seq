@@ -24,11 +24,11 @@ def feature_parsing(map_file, feature_file):
     output_name=feature_name+"_binned.txt"
     output_path=(output_name)
     print(f"Writing output to {output_path}")
-    features = pd.read_csv(feature_file, delimiter=',')
+    features = pd.read_csv(feature_file, delimiter='\t', comment='#')
     print(f"Found feature file to contain the following columns:")
     f_headers = list(features.columns.values)
     print(f"{f_headers}")
-    map = pd.read_csv(map_file, delimiter=',')
+    map = pd.read_csv(map_file, delimiter='\t', header=0)
     print(f"Found mapping file with the following headers")
     headers = list(map.columns.values)
     print(f"{headers}")
@@ -67,16 +67,16 @@ def run_parsing(map_files, feature_files):
 @pytest.fixture
 def single_feature():
     """Create a single test feature file for unit testing."""
-    feature_content = """Geneid,Chr,Start,End,Strand,Length,sample1.bam
-ENSG00000223972,contig1,11869,14409,+,1735,23
-ENSG00000227232,contig1,14404,29570,-,2073,156
-ENSG00000278267,contig2,17369,17436,-,68,0
-ENSG00000243485,contig4,29554,31109,+,1440,89
-ENSG00000284332,contig5,30366,30503,+,138,5
-ENSG00000237613,contig5,34554,36081,-,718,34
-ENSG00000268020,contig6,52473,53312,+,840,67
-ENSG00000240361,contig6,62948,63887,+,940,12
-ENSG00000186092,contig6,69091,70008,+,918,203
+    feature_content = """Geneid\tChr\tStart\tEnd\tStrand\tLength\tsample1.bam
+ENSG00000223972\tcontig1\t11869\t14409\t+\t1735\t23
+ENSG00000227232\tcontig1\t14404\t29570\t-\t2073\t156
+ENSG00000278267\tcontig2\t17369\t17436\t-\t68\t0
+ENSG00000243485\tcontig4\t29554\t31109\t+\t1440\t89
+ENSG00000284332\tcontig5\t30366\t30503\t+\t138\t5
+ENSG00000237613\tcontig5\t34554\t36081\t-\t718\t34
+ENSG00000268020\tcontig6\t52473\t53312\t+\t840\t67
+ENSG00000240361\tcontig6\t62948\t63887\t+\t940\t12
+ENSG00000186092\tcontig6\t69091\t70008\t+\t918\t203
 """
 
     with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='_assembly1_counts.txt') as tmp:
@@ -87,28 +87,28 @@ ENSG00000186092,contig6,69091,70008,+,918,203
 @pytest.fixture
 def multiple_features():
     """Create multiple feature files for unit testing."""
-    feature_1_content ="""Geneid,Chr,Start,End,Strand,Length,sample1.bam
-ENSG00000223972,contig1,11869,14409,+,1735,23
-ENSG00000227232,contig1,14404,29570,-,2073,156
-ENSG00000278267,contig2,17369,17436,-,68,0
-ENSG00000243485,contig4,29554,31109,+,1440,89
-ENSG00000284332,contig5,30366,30503,+,138,5
-ENSG00000237613,contig5,34554,36081,-,718,34
-ENSG00000268020,contig6,52473,53312,+,840,67
-ENSG00000240361,contig6,62948,63887,+,940,12
-ENSG00000186092,contig6,69091,70008,+,918,203
+    feature_1_content ="""Geneid\tChr\tStart\tEnd\tStrand\tLength\tsample1.bam
+ENSG00000223972\tcontig1\t11869\t14409\t+\t1735\t23
+ENSG00000227232\tcontig1\t14404\t29570\t-\t2073\t156
+ENSG00000278267\tcontig2\t17369\t17436\t-\t68\t0
+ENSG00000243485\tcontig4\t29554\t31109\t+\t1440\t89
+ENSG00000284332\tcontig5\t30366\t30503\t+\t138\t5
+ENSG00000237613\tcontig5\t34554\t36081\t-\t718\t34
+ENSG00000268020\tcontig6\t52473\t53312\t+\t840\t67
+ENSG00000240361\tcontig6\t62948\t63887\t+\t940\t12
+ENSG00000186092\tcontig6\t69091\t70008\t+\t918\t203
 """
 
-    feature_2_content ="""Geneid,Chr,Start,End,Strand,Length,sample1.bam
-ENSG00000223972,contig1,11869,14409,+,1735,230
-ENSG00000227232,contig1,14404,29570,-,2073,15
-ENSG00000278267,contig2,17369,17436,-,68,21
-ENSG00000243485,contig4,29554,31109,+,1440,5
-ENSG00000284332,contig5,30366,30503,+,138,5
-ENSG00000237613,contig5,34554,36081,-,718,54
-ENSG00000268020,contig6,52473,53312,+,840,121
-ENSG00000240361,contig6,62948,63887,+,940,1
-ENSG00000186092,contig6,69091,70008,+,918,2030
+    feature_2_content ="""Geneid\tChr\tStart\tEnd\tStrand\tLength\tsample1.bam
+ENSG00000223972\tcontig1\t11869\t14409\t+\t1735\t230
+ENSG00000227232\tcontig1\t14404\t29570\t-\t2073\t15
+ENSG00000278267\tcontig2\t17369\t17436\t-\t68\t21
+ENSG00000243485\tcontig4\t29554\t31109\t+\t1440\t5
+ENSG00000284332\tcontig5\t30366\t30503\t+\t138\t5
+ENSG00000237613\tcontig5\t34554\t36081\t-\t718\t54
+ENSG00000268020\tcontig6\t52473\t53312\t+\t840\t121
+ENSG00000240361\tcontig6\t62948\t63887\t+\t940\t1
+ENSG00000186092\tcontig6\t69091\t70008\t+\t918\t2030
 """
 
     feature_files = []
@@ -121,7 +121,7 @@ ENSG00000186092,contig6,69091,70008,+,918,2030
 @pytest.fixture
 def single_map():
     """Create a mock contig to binning map file."""
-    map_content = "Contig,Bin\ncontig1,bin1\ncontig3,bin3\ncontig2,unbinned\ncontig4,unbinned\ncontig5,bin2\ncontig6,bin1"
+    map_content = "Contig\tBin\ncontig1\tbin1\ncontig3\tbin3\ncontig2\tunbinned\ncontig4\tunbinned\ncontig5\tbin2\ncontig6\tbin1"
 
     with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='_assembly1_map.txt') as tmp:
         tmp.write(map_content)
@@ -131,9 +131,9 @@ def single_map():
 @pytest.fixture
 def multiple_maps():
     """Create a multiple mock contig to binning map file."""
-    map_1_content = "Contig,Bin\ncontig1,bin1\ncontig3,bin3\ncontig2,unbinned"
+    map_1_content = "Contig\tBin\ncontig1\tbin1\ncontig3\tbin3\ncontig2\tunbinned\ncontig4\tunbinned\ncontig5\tbin2\ncontig6\tbin1"
 
-    map_2_content = "Contig,Bin\ncontig4,unbinned\ncontig5,bin2\ncontig6,bin1"
+    map_2_content = "Contig\tBin\ncontig1\tbin1\ncontig3\tbin3\ncontig2\tunbinned\ncontig4\tunbinned\ncontig5\tbin2\ncontig6\tbin1"
 
     map_files = []
     for i, content in enumerate([map_1_content, map_2_content], 1):
@@ -151,7 +151,7 @@ def test_single_assembly(single_map, single_feature):
     for input_file in single_feature:
         feature_base = os.path.basename(input_file)
         feature_name = os.path.splitext(feature_base)[0]
-        output_name = feature_name + "binned_counts.txt"
+        output_name = feature_name + "_binned.txt"
         output_path = output_name
         if os.path.exists(output_path):
             print(f"DEBUG: Output file {output_path} was created successfully")
@@ -176,7 +176,7 @@ def test_multiple_assemblies(multiple_maps, multiple_features):
     for input_file in multiple_features:
         feature_base = os.path.basename(input_file)
         feature_name = os.path.splitext(feature_base)[0]
-        output_name = feature_name + "binned_counts.txt"
+        output_name = feature_name + "_binned.txt"
         output_path = output_name
         if os.path.exists(output_path):
             print(f"DEBUG: Output file {output_path} was created successfully")
@@ -184,6 +184,8 @@ def test_multiple_assemblies(multiple_maps, multiple_features):
             assert file_size > 0, f"Output file {output_path} is empty!"
             print(f"DEBUG: File size: {file_size} bytes")
             df = pd.read_csv(output_path, delimiter='\t')
+            print(f"DEBUG: Content in output file is:")
+            print(f"{df}")
             contig6_rows = df[df['Chr'] == 'contig6']
             contig1_rows = df[df['Chr'] == 'contig1']
             contig3_rows = df[df['Chr'] == 'contig3']

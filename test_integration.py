@@ -208,7 +208,7 @@ class TestFullPipeline:
                 mapped_reads = ["a1_contig1", "a2_contig2"]
                 found_reads = set(mapped_reads) & set(query_names)
                 assert found_reads, f"None of {mapped_reads} found in PAF file {paf_file} queries: {set(query_names)}"
-            print(f"✅ Pipeline completed and tests all passed!")
+            print(f"✅ Alignment completed and tests all passed!")
         else:
             print(f"{chr(0x2757)} ERROR: This step did not generate any output")
 
@@ -238,15 +238,20 @@ class TestFullPipeline:
         # Step 3: Count the features using a SAM and GTF file
         results = run_counter(mock_sam_files, mock_gtf_files, threads=2, gene="CDS", gene_id="gene_id")
         if all(os.path.exists(file) for file in results):
-            for file in results:
+            assembly1_genes = ['GENE001', 'GENE002', 'GENE003', 'GENE004', 'GENE005', 'GENE006', 'GENE007']
+            assembly2_genes = ['GENE008', 'GENE009', 'GENE010', 'GENE011', 'GENE012', 'GENE013', 'GENE014']
+            for i, file in enumerate(results):
                 print(f"Output file {file} was created successfully")
                 file_size = os.path.getsize(file)
                 assert file_size > 0, f"Output file {file} is empty!"
                 print(f"File size: {file_size} bytes")
 
                 df = pd.read_csv(file, delimiter='\t', comment='#')
-                expected_genes = ['GENE001', 'GENE002', 'GENE003', 'GENE004', 'GENE005', 'GENE006', 'GENE007', 
-                    'GENE008', 'GENE009', 'GENE010', 'GENE011', 'GENE012', 'GENE013', 'GENE014']
+                if i == 0:
+                    expected_genes = assembly1_genes
+                else:
+                    expected_genes = assembly2_genes
+
                 found_genes = df['Geneid'].tolist()
                 missing_genes = set(expected_genes) - set(found_genes)
                 assert len(missing_genes) == 0, f"Missing genes in output: {missing_genes}"
@@ -262,27 +267,34 @@ class TestFullPipeline:
 
         # Step 4: Parse the output featureCounts to assign the gene ids to bins contigs align well to, if no alignment than
         # It is returned as unbinned as above
-        binned_reads = ["read_001"]
-        unbinned_reads = ["read_002", "read_003", "read_004"]
-        for input_file in aligned_paf_files:
-            expected_output = os.path.splitext(input_file)[0] + "_contigs_to_bin_mapping.txt"
-            if os.path.exists(expected_output):
-                print(f"DEBUG: Output file {expected_output} was created successfully")
-                file_size = os.path.getsize(expected_output)
-                assert file_size > 0, f"Output file {expected_output} is empty!"
+        feature_parsing_results = run_parsing(expected_outputs, results)
+        expected_feature_outputs = []
+        for count_file in results:
+            count_base = os.path.basename(count_file)
+            count_name = os.path.splitext(count_base)[0]
+            feature_output = count_name + "_binned.txt"
+            expected_feature_outputs.append(feature_output)
+        if all(os.path.exists(output_file) for output_file in expected_feature_outputs):
+            for feature_file in expected_feature_outputs:
+                print(f"DEBUG: Output file {feature_file} was created successfully")
+                file_size = os.path.getsize(feature_file)
+                assert file_size > 0, f"Output file {feature_file} is empty!"
                 print(f"DEBUG: File size: {file_size} bytes")
-                output_file = pd.read_csv(expected_output, delimiter='\t', header=0)
+
+                binned_counts = pd.read_csv(feature_file, delimiter='\t', header=0)
                 print(f"DEBUG: Content in output file is:")
-                print(f"{output_file}")
-                binned = output_file.loc[output_file['Contig'].isin(binned_reads)]
-                unbinned = output_file.loc[output_file['Contig'].isin(unbinned_reads)]
-                for _, row in binned.iterrows():
-                    assert row['Bin'] in ["bin1_scaffold1", "bin2_scaffold1"], f"{row['Contig']} incorrectly assigned: {row['Bin']}"
-                for _, row in unbinned.iterrows():
-                    assert row['Bin'] == "unbinned", f"{row['Contig']} should be unbinned but assigned to {row['Bin']}!"
-            else:
-                print(f"DEBUG: WARNING - Output file {expected_output} was NOT created")
-    print(f"✅ Pipeline completed and tests all passed!")
+                print(f"{binned_counts}")
+
+                binned_genes = binned_counts[binned_counts['Chr'].isin(['a1_contig1', 'a2_contig2'])]
+                unbinned_genes = binned_counts[binned_counts['Chr'].isin(['a1_contig2', 'a1_contig3', 'a1_contig4', 'a2_contig1', 'a2_contig3', 'a2_contig4'])]
+                for _, row in binned_genes.iterrows():
+                    assert row['binning'] in ["bin1_scaffold1", "bin2_scaffold1"], f"Gene {row['Geneid']} incorrectly assigned: {row['binning']}"
+                for _, row in unbinned_genes.iterrows():
+                    assert row['binning'] == "unbinned", f"Gene {row['Geneid']} should be unbinned but assigned to {row['binning']}"
+            print(f"✅ Feature parsing completed and tests all passed!")
+        else:
+            print(f"{chr(0x2757)} ERROR: Feature parsing step did not generate expected output files")
+        print(f"✅ Pipeline completed and tests all passed!")
 
 @pytest.fixture(autouse=True)
 def cleanup_test_files(request):
