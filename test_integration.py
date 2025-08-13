@@ -211,6 +211,8 @@ class TestFullPipeline:
                 print(f"File size: {file_size} bytes")
 
                 df = pd.read_csv(file, delimiter='\t', comment='#')
+                print(f"The content of the feature count file is:")
+                print(f"{df}")
                 if i == 0:
                     expected_genes = assembly1_genes
                 else:
