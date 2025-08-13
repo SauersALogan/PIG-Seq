@@ -37,7 +37,7 @@ def feature_parsing(map_file, feature_file):
     print(f"{map_dictionary}")
     results = features['Chr'].map(map_dictionary)
     features['binning'] = results
-    features.to_csv(f"{output_path}", sep="\t", header=True)
+    features.to_csv(f"{output_path}", sep="\t", header=True, index = False)
     print(f"Resulting gene to bin to count data written to: {output_path}")
     return features
 

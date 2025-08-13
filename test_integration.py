@@ -280,11 +280,7 @@ class TestFullPipeline:
                 file_size = os.path.getsize(feature_file)
                 assert file_size > 0, f"Output file {feature_file} is empty!"
                 print(f"DEBUG: File size: {file_size} bytes")
-
                 binned_counts = pd.read_csv(feature_file, delimiter='\t', header=0)
-                print(f"DEBUG: Content in output file is:")
-                print(f"{binned_counts}")
-
                 binned_genes = binned_counts[binned_counts['Chr'].isin(['a1_contig1', 'a2_contig2'])]
                 unbinned_genes = binned_counts[binned_counts['Chr'].isin(['a1_contig2', 'a1_contig3', 'a1_contig4', 'a2_contig1', 'a2_contig3', 'a2_contig4'])]
                 for _, row in binned_genes.iterrows():
