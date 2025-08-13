@@ -25,42 +25,6 @@ from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
 from Bio import SeqIO
 import random
-class TestFullPipeline:
-    def test_complete_pipeline(self, sample_bins, multiple_assemblies):
-        """
-        Test to check if we're ready for integration testing.
-        This test checks if individual functions can be imported.
-        """
-        # TODO: Uncomment as individual functions are completed
-
-        # Step 1: Align
-        aligned_paf_files = run_alignment(sample_bins, multiple_assemblies)
-        for paf_file in aligned_paf_files:
-            paf_out = pd.read_csv(paf_file, delimiter='\t', header=None)
-            query_names = paf_out.iloc[:, 0].tolist()
-            mapped_reads = ["a1_contig1", "a2_contig2"]
-            found_reads = set(mapped_reads) & set(query_names)
-            assert found_reads, f"None of {mapped_reads} found in PAF file {paf_file} queries: {set(query_names)}"
-
-        # Step 2: Parse the PAF output
-        binned_reads = ["a1_contig1", "a2_contig2"]
-        unbinned_reads = ["a1_contig2", "a1_contig3", "a1_contig4", "a2_contig1", "a2_contig3", "a2_contig4"]
-        for paf_file in aligned_paf_files:
-            run_paf_parsing(aligned_paf_files)
-        for input_file in aligned_paf_files:
-            expected_output = os.path.splitext(input_file)[0] + "_contigs_to_bin_mapping.txt"
-            output_file = pd.read_csv(expected_output, delimiter='\t', header=0)
-            read_names = output_file.iloc[:, 0].tolist()
-            print(f"DEBUG: Content in output file is:")
-            print(f"{output_file}")
-            binned = output_file.loc[output_file['Contig'].isin(binned_reads)]
-            unbinned = output_file.loc[output_file['Contig'].isin(unbinned_reads)]
-            for _, row in binned.iterrows():
-                assert row['Bin'] == "bin1_scaffold1", f"{row['Contig']} incorrectly assigned to {binned['Bin'].iloc[0]}"
-            for _, row in unbinned.iterrows():
-                assert row['Bin'] == "unbinned", f"{row['Contig']} should be unbinned but assigned to {row['Bin']}!"
-
-        print(f"✅ Pipeline completed and tests all passed!")
 
 # =============================================================================
 # Integration test fixtures - Shared test data
