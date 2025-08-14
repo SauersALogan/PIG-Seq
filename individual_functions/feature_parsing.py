@@ -15,6 +15,13 @@ import pytest
 import pandas as pd
 import re
 import shutil
+import sys
+
+# =============================================================================
+# Import utility functions
+# =============================================================================
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from utils.file_pairing import extract_file_identifiers, pair_files_by_sample
 
 # =============================================================================
 # Actual functions to test
