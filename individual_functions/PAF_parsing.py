@@ -17,7 +17,7 @@ import pandas as pd
 # =============================================================================
 # Actual functions to test
 # =============================================================================
-def PAF_parsing(paf_file, identity_threshold = 0.95, coverage_threshold = 0.8, quality_threshold = 40):
+def PAF_parsing(paf_file, assembly_file, identity_threshold = 0.95, coverage_threshold = 0.8, quality_threshold = 40):
     paf = pd.read_csv(paf_file, delimiter='\t', header=None, dtype={
         1: 'int64', # query_length
         2: 'int64', # query_start
@@ -49,7 +49,14 @@ def PAF_parsing(paf_file, identity_threshold = 0.95, coverage_threshold = 0.8, q
     print(f"DEBUG: Content in mapping is:")
     print(f"DEBUG: {mapping}")
     passed_contigs = mapping['Contig'].unique()
-    all_contigs = paf[0].unique()
+    paf_contigs = paf[0].unique()
+    assembly_contigs = set()
+    with open(assembly_file, 'r') as f:
+        for line in f:
+            if line.startswith('>'):
+                contig_name = line[1:].split()[0]  # Take first word after '>'
+                assembly_contigs.add(contig_name)
+    all_contigs = paf_contigs | assembly_contigs
     failed_contigs = set(all_contigs) - set(passed_contigs)
     unbinned_contigs = pd.DataFrame({
         'Contig': list(failed_contigs),
@@ -108,6 +115,8 @@ read_004\t7000\t3000\t6750\t+\tcontig_7\t55000\t7500\t11250\t3713\t3750\t21"""
             tmp.write(content)
             paf_files.append(tmp.name)
     return paf_files
+
+
 
 # =============================================================================
 # Setup the actual tests

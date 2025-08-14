@@ -13,10 +13,53 @@ import tempfile
 import os
 import pytest
 import pandas as pd
+import re
+import shutil
 
 # =============================================================================
 # Actual functions to test
 # =============================================================================
+def extract_file_identifiers(filename):
+    """Extracts the similar file identifier for all input files to ensure proper pairing.
+    First it looks for common patterns such as Sample_XXX, then numerical suffixes such as sample1. If these fail
+    it will finish by looking at the last part of the file after controlling for common delimiters"""
+    basename = os.path.basename(filename)
+    basename = re.sub(r'\.(txt|sam|bam|gtf|gff|paf|fasta|fa|fastq|fq)$', '', basename, flags=re.IGNORECASE)
+    match = re.search(r'(\d+)', basename)
+    if match:
+        return match.group(1)
+    return basename
+
+def pair_files_by_sample(feature_files, map_files):
+    """This function will pair files based upon the layouts controlled for in the function above"""
+    feature_dict = {}
+    for feature_file in feature_files:
+        identifier = extract_file_identifiers(feature_file)
+        feature_dict[identifier] = feature_file
+    map_dict = {}
+    for map_file in map_files:
+        identifier = extract_file_identifiers(map_file)
+        map_dict[identifier] = map_file
+    paired_files = []
+    unmatched_features = []
+    unmatched_maps = []
+    for identifier in feature_dict.keys():
+        if identifier in map_dict:
+            feature_file = feature_dict[identifier]
+            map_file = map_dict[identifier]
+            paired_files.append((feature_file, map_file))
+            print(f"DEBUG: Paired {os.path.basename(feature_file)} with {os.path.basename(map_file)} (ID: {identifier})")
+        else:
+            unmatched_features.append(feature_dict[identifier])
+    for identifier in map_dict.keys():
+        if identifier not in feature_dict:
+            unmatched_maps.append(map_dict[identifier])
+    if unmatched_features:
+        print(f"WARNING: Unmatched feature files: {[os.path.basename(f) for f in unmatched_features]}")
+    if unmatched_maps:
+        print(f"WARNING: Unmatched mapping files: {[os.path.basename(f) for f in unmatched_maps]}")
+    return paired_files
+
 def feature_parsing(map_file, feature_file):
     """Filter feature file"""
     feature_base=os.path.basename(feature_file)
@@ -54,9 +97,11 @@ def run_parsing(map_files, feature_files):
     elif isinstance(feature_files, str) and isinstance(map_files, list):
         print("You provided a list of mapping files for a single feature file, this tells me something is wrong, check inputs")
     elif isinstance(feature_files, list) and isinstance(map_files, list):
-        feature_files.sort()
-        map_files.sort()
-        for feature_file, map_file in zip(feature_files, map_files):
+        paired_files = pair_files_by_sample(feature_files, map_files)
+        if not paired_files:
+            print(f"DEBUG: No matching file pairs found, please check your file naming conventions or check the documentation")
+            return final_results
+        for feature_file, map_file in paired_files:
             parsed_features = feature_parsing(map_file, feature_file)
             final_results.append(parsed_features)
     return(final_results)
@@ -65,7 +110,14 @@ def run_parsing(map_files, feature_files):
 # Create the mock data for testing
 # =============================================================================
 @pytest.fixture
-def single_feature():
+def temp_test_dir():
+    """Create a temp directory for test files"""
+    temp_dir = tempfile.mkdtemp(prefix='Feature_parse_unit_test')
+    yield temp_dir
+    shutil.rmtree(temp_dir)
+
+@pytest.fixture
+def single_feature(temp_test_dir):
     """Create a single test feature file for unit testing."""
     feature_content = """Geneid\tChr\tStart\tEnd\tStrand\tLength\tsample1.bam
 ENSG00000223972\tcontig1\t11869\t14409\t+\t1735\t23
@@ -79,13 +131,13 @@ ENSG00000240361\tcontig6\t62948\t63887\t+\t940\t12
 ENSG00000186092\tcontig6\t69091\t70008\t+\t918\t203
 """
 
-    with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='_assembly1_counts.txt') as tmp:
-        tmp.write(feature_content)
-        feature_file = tmp.name
+    feature_file = os.path.join(temp_test_dir, 'test_assembly1_counts.txt')
+    with open(feature_file, 'w') as f:
+        f.write(feature_content)
     return [feature_file]
 
 @pytest.fixture
-def multiple_features():
+def multiple_features(temp_test_dir):
     """Create multiple feature files for unit testing."""
     feature_1_content ="""Geneid\tChr\tStart\tEnd\tStrand\tLength\tsample1.bam
 ENSG00000223972\tcontig1\t11869\t14409\t+\t1735\t23
@@ -113,23 +165,23 @@ ENSG00000186092\tcontig6\t69091\t70008\t+\t918\t2030
 
     feature_files = []
     for i, content in enumerate([feature_1_content, feature_2_content], 1):
-        with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix=f'_assembly{i}_counts.txt') as tmp:
-            tmp.write(content)
-            feature_files.append(tmp.name)
+        feature_file = os.path.join(temp_test_dir, f'test_assembly{i}_counts.txt')
+        with open(feature_file, 'w') as f:
+            f.write(content)
+        feature_files.append(feature_file)
     return feature_files
 
 @pytest.fixture
-def single_map():
+def single_map(temp_test_dir):
     """Create a mock contig to binning map file."""
     map_content = "Contig\tBin\ncontig1\tbin1\ncontig3\tbin3\ncontig2\tunbinned\ncontig4\tunbinned\ncontig5\tbin2\ncontig6\tbin1"
-
-    with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='_assembly1_map.txt') as tmp:
-        tmp.write(map_content)
-        map_file = tmp.name
+    map_file = os.path.join(temp_test_dir, 'test_assembly1_map.txt')
+    with open(map_file, 'w') as f:
+        f.write(map_content)
     return [map_file]
 
 @pytest.fixture
-def multiple_maps():
+def multiple_maps(temp_test_dir):
     """Create a multiple mock contig to binning map file."""
     map_1_content = "Contig\tBin\ncontig1\tbin1\ncontig3\tbin3\ncontig2\tunbinned\ncontig4\tunbinned\ncontig5\tbin2\ncontig6\tbin1"
 
@@ -137,9 +189,10 @@ def multiple_maps():
 
     map_files = []
     for i, content in enumerate([map_1_content, map_2_content], 1):
-        with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix=f'_assembly{i}_map.txt') as tmp:
-            tmp.write(content)
-            map_files.append(tmp.name)
+        map_file = os.path.join(temp_test_dir, f'test_assembly{i}_map.txt')
+        with open(map_file, 'w') as f:
+            f.write(content)
+        map_files.append(map_file)
     return map_files
 
 # =============================================================================

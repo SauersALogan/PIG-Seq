@@ -25,6 +25,8 @@ from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
 from Bio import SeqIO
 import random
+import re
+import shutil
 
 # =============================================================================
 # Integration test fixtures - Shared test data
@@ -54,37 +56,42 @@ for i in range(0, len(bad_quality_bases), 50):
 bad_quality = "".join(bad_quality_bases)
 
 @pytest.fixture
-def multiple_assemblies():
+def temp_test_dir():
+    temp_dir = tempfile.mkdtemp(prefix='Pipeline_test')
+    yield temp_dir
+    shutil.rmtree(temp_dir)
+
+@pytest.fixture
+def multiple_assemblies(temp_test_dir):
     """Create assembly files where contig1 will match bin sequences well, others poorly."""
     assembly_1_content = f">a1_contig1\n{perfect_match}\n>a1_contig2\n{bad_match}\n>a1_contig3\n{bad_coverage}\n>a1_contig4\n{bad_quality}"
     assembly_2_content = f">a2_contig1\n{bad_match}\n>a2_contig2\n{perfect_match}\n>a2_contig3\n{bad_coverage}\n>a2_contig4\n{bad_quality}"
 
     assembly_files = []
     for i, content in enumerate([assembly_1_content, assembly_2_content], 1):
-        with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix=f'_assembly{i}.fasta') as tmp:
-            tmp.write(content)
-            assembly_files.append(tmp.name)
+        assembly_file = os.path.join(temp_test_dir, f'test_assembly{i}.fasta')
+        with open(assembly_file, 'w') as f:
+            f.write(content)
+        assembly_files.append(assembly_file)
     return assembly_files
 
 @pytest.fixture
-def sample_bins():
+def sample_bins(temp_test_dir):
     """Create bin files where one sequence matches contig1 perfectly, others don't match well."""
     bin1_content = f">bin1_scaffold1\n{perfect_match}\n>bin1_scaffold2\n{generate_random_sequence(3000)}"
     bin2_content = f">bin2_scaffold1\n{generate_random_sequence(5000)}\n>bin2_scaffold2\n{perfect_match[:20000]}"
 
     bin_files = []
     for i, content in enumerate([bin1_content, bin2_content], 1):
-        with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix=f'_bin{i}.fasta') as tmp:
-            tmp.write(content)
-            bin_files.append(tmp.name)
+        bin_file = os.path.join(temp_test_dir, f'test_bin{i}.fasta')
+        with open(bin_file, 'w') as f:
+            f.write(content)
+        bin_files.append(bin_file)
     return bin_files
 
 @pytest.fixture
-def mock_gtf_files(multiple_assemblies):
+def mock_gtf_files(temp_test_dir):
     """Create GTF files corresponding to the assembly files."""
-    gtf_files = []
-
-    # GTF content for assembly 1 (a1_contig1, a1_contig2, a1_contig3, a1_contig4)
     gtf1_content = """a1_contig1	prokka	CDS	100	500	.	+	0	gene_id "GENE001"; product "hypothetical protein"
 a1_contig1	prokka	CDS	600	1200	.	-	0	gene_id "GENE002"; product "DNA polymerase"
 a1_contig1	prokka	CDS	1500	2000	.	+	0	gene_id "GENE003"; product "ribosomal protein"
@@ -94,7 +101,6 @@ a1_contig3	prokka	CDS	300	900	.	+	0	gene_id "GENE006"; product "transcriptase"
 a1_contig4	prokka	CDS	150	750	.	+	0	gene_id "GENE007"; product "helicase"
 """
 
-    # GTF content for assembly 2 (a2_contig1, a2_contig2, a2_contig3, a2_contig4)
     gtf2_content = """a2_contig1	prokka	CDS	100	500	.	+	0	gene_id "GENE008"; product "hypothetical protein"
 a2_contig1	prokka	CDS	600	1200	.	-	0	gene_id "GENE009"; product "DNA polymerase"
 a2_contig2	prokka	CDS	200	800	.	+	0	gene_id "GENE010"; product "membrane protein"
@@ -104,18 +110,17 @@ a2_contig3	prokka	CDS	300	900	.	+	0	gene_id "GENE013"; product "transcriptase"
 a2_contig4	prokka	CDS	150	750	.	+	0	gene_id "GENE014"; product "helicase"
 """
 
+    gtf_files = []
     for i, content in enumerate([gtf1_content, gtf2_content], 1):
-        with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix=f'_assembly{i}.gtf') as tmp:
-            tmp.write(content)
-            gtf_files.append(tmp.name)
+        gtf_file = os.path.join(temp_test_dir, f'test_assembly{i}.gtf')
+        with open(gtf_file, 'w') as f:
+            f.write(content)
+        gtf_files.append(gtf_file)
     return gtf_files
 
 @pytest.fixture
-def mock_sam_files(multiple_assemblies):
+def mock_sam_files(temp_test_dir):
     """Create SAM files with reads mapping to the assembly contigs."""
-    sam_files = []
-
-    # SAM header and content for assembly 1
     sam1_content = """@HD	VN:1.6	SO:coordinate
 @SQ	SN:a1_contig1	LN:64000
 @SQ	SN:a1_contig2	LN:64000
@@ -140,10 +145,12 @@ read9	0	a2_contig2	1900	60	100M	*	0	0	ACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTAC
 read10	0	a2_contig3	350	60	100M	*	0	0	ACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGT	IIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII
 """
 
+    sam_files = []
     for i, content in enumerate([sam1_content, sam2_content], 1):
-        with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix=f'_sample{i}.sam') as tmp:
-            tmp.write(content)
-            sam_files.append(tmp.name)
+        sam_file = os.path.join(temp_test_dir, f'test_sample{i}.sam')
+        with open(sam_file, 'w') as f:
+            f.write(content)
+        sam_files.append(sam_file)
     return sam_files
 
 # =============================================================================
@@ -152,7 +159,7 @@ read10	0	a2_contig3	350	60	100M	*	0	0	ACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTAC
 from individual_functions.contig_mapping import build_minimap2_command, run_alignment
 from individual_functions.PAF_parsing import PAF_parsing, run_paf_parsing
 from individual_functions.feature_counting import build_featureCounts, execute_feature_counting, run_counter
-from individual_functions.feature_parsing import feature_parsing, run_parsing
+from individual_functions.feature_parsing import extract_file_identifiers, pair_files_by_sample, feature_parsing, run_parsing
 
 # =============================================================================
 # Integration test - Test functions working together
@@ -180,7 +187,7 @@ class TestFullPipeline:
         binned_reads = ["a1_contig1", "a2_contig2"]
         unbinned_reads = ["a1_contig2", "a1_contig3", "a1_contig4", "a2_contig1", "a2_contig3", "a2_contig4"]
         for paf_file in aligned_paf_files:
-            run_paf_parsing(aligned_paf_files)
+            run_paf_parsing(paf_file)
         expected_outputs = [os.path.splitext(input_file)[0] + "_contigs_to_bin_mapping.txt" for input_file in aligned_paf_files]
         if all(os.path.exists(output_file) for output_file in expected_outputs):
             for input_file in aligned_paf_files:
@@ -234,6 +241,7 @@ class TestFullPipeline:
         # Step 4: Parse the output featureCounts to assign the gene ids to bins contigs align well to, if no alignment than
         # It is returned as unbinned as above
         feature_parsing_results = run_parsing(expected_outputs, results)
+        print(f"{feature_parsing_results}")
         expected_feature_outputs = []
         for count_file in results:
             count_base = os.path.basename(count_file)
