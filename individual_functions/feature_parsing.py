@@ -19,47 +19,6 @@ import shutil
 # =============================================================================
 # Actual functions to test
 # =============================================================================
-def extract_file_identifiers(filename):
-    """Extracts the similar file identifier for all input files to ensure proper pairing.
-    First it looks for common patterns such as Sample_XXX, then numerical suffixes such as sample1. If these fail
-    it will finish by looking at the last part of the file after controlling for common delimiters"""
-    basename = os.path.basename(filename)
-    basename = re.sub(r'\.(txt|sam|bam|gtf|gff|paf|fasta|fa|fastq|fq)$', '', basename, flags=re.IGNORECASE)
-    match = re.search(r'(\d+)', basename)
-    if match:
-        return match.group(1)
-    return basename
-
-def pair_files_by_sample(feature_files, map_files):
-    """This function will pair files based upon the layouts controlled for in the function above"""
-    feature_dict = {}
-    for feature_file in feature_files:
-        identifier = extract_file_identifiers(feature_file)
-        feature_dict[identifier] = feature_file
-    map_dict = {}
-    for map_file in map_files:
-        identifier = extract_file_identifiers(map_file)
-        map_dict[identifier] = map_file
-    paired_files = []
-    unmatched_features = []
-    unmatched_maps = []
-    for identifier in feature_dict.keys():
-        if identifier in map_dict:
-            feature_file = feature_dict[identifier]
-            map_file = map_dict[identifier]
-            paired_files.append((feature_file, map_file))
-            print(f"DEBUG: Paired {os.path.basename(feature_file)} with {os.path.basename(map_file)} (ID: {identifier})")
-        else:
-            unmatched_features.append(feature_dict[identifier])
-    for identifier in map_dict.keys():
-        if identifier not in feature_dict:
-            unmatched_maps.append(map_dict[identifier])
-    if unmatched_features:
-        print(f"WARNING: Unmatched feature files: {[os.path.basename(f) for f in unmatched_features]}")
-    if unmatched_maps:
-        print(f"WARNING: Unmatched mapping files: {[os.path.basename(f) for f in unmatched_maps]}")
-    return paired_files
-
 def feature_parsing(map_file, feature_file):
     """Filter feature file"""
     feature_base=os.path.basename(feature_file)

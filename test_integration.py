@@ -157,7 +157,7 @@ read10	0	a2_contig3	350	60	100M	*	0	0	ACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTAC
 # Import the functions from the individual_functions folder
 # =============================================================================
 from individual_functions.contig_mapping import build_minimap2_command, run_alignment
-from individual_functions.PAF_parsing import PAF_parsing, run_paf_parsing
+from individual_functions.PAF_parsing import extract_file_identifiers, pair_files_by_sample, PAF_parsing, run_paf_parsing
 from individual_functions.feature_counting import build_featureCounts, execute_feature_counting, run_counter
 from individual_functions.feature_parsing import extract_file_identifiers, pair_files_by_sample, feature_parsing, run_parsing
 
