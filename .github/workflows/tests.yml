@@ -37,8 +37,8 @@ jobs:
       shell: bash -l {0}  # Important: use login shell for conda
       run: |
         conda install -c bioconda subread -y
-        which subread  # Verify installation
-        subread --version  # Test it works
+        which featureCounts  # Verify installation
+        featureCounts --version  # Test it works
     
     - name: Install Python dependencies
       shell: bash -l {0}
