@@ -32,6 +32,13 @@ jobs:
         conda install -c bioconda minimap2 -y
         which minimap2  # Verify installation
         minimap2 --version  # Test it works
+
+    - name: Install minimap2
+      shell: bash -l {0}  # Important: use login shell for conda
+      run: |
+        conda install -c bioconda subread -y
+        which subread  # Verify installation
+        subread --version  # Test it works
     
     - name: Install Python dependencies
       shell: bash -l {0}
