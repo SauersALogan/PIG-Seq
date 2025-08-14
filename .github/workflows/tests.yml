@@ -51,7 +51,7 @@ jobs:
     
     - name: Run tests
       shell: bash -l {0}  # Use conda environment
-      run: pytest -v
+      run: pytest -v -s 
     
     - name: Clean up __pycache__ directories
       if: always()
