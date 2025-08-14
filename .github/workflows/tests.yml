@@ -33,7 +33,7 @@ jobs:
         which minimap2  # Verify installation
         minimap2 --version  # Test it works
 
-    - name: Install minimap2
+    - name: Install subread for featureCounts
       shell: bash -l {0}  # Important: use login shell for conda
       run: |
         conda install -c bioconda subread -y
