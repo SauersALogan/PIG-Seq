@@ -22,8 +22,6 @@ import glob
 # Constants
 ##################################################################################
 
-
-
 ##################################################################################
 # Core Logic
 ##################################################################################
@@ -36,18 +34,17 @@ from utils.file_pairing import extract_file_identifiers, pair_files_by_sample
 ##################################################################################
 # Command line interfacing
 ##################################################################################
-
 parser = argparse.ArgumentParser(description="Script for processing contigs from assemblies and splitting into binned and unbinned sets")
 parser.add_argument("--assemblies", nargs="+", required=True, help="The assembly files")
 parser.add_argument("--bins", nargs="+", required=True, help="The bin files")
 parser.add_argument("--output", required=True, help="Output directory")
 parser.add_argument("--sam_files", nargs="+", required=True, help="The directory containing SAM files")
 parser.add_argument("--gtf_files", nargs="+", required=True, help="The directory containing GTF files")
+parser.add_argument("--pattern_source", required=False, help="File or string for how identifiers should be handled")
 
 ##################################################################################
 # Main workflow
 ##################################################################################
-
 if __name__ == "__main__":
     args = parser.parse_args()
 
@@ -77,6 +74,9 @@ if __name__ == "__main__":
         gtf_files.extend(glob.glob(pattern))
     gtf_files.sort()
 
+    # Load the pattern_source
+    pattern_source = args.pattern_source
+
     # Display the files
     if assembly_files:
         print("Assembly files:")
@@ -105,6 +105,13 @@ if __name__ == "__main__":
             print(f" - {file}")
     else:
         print("No GTF files found")
+
+    if pattern_source is None:
+        print(f"You have not selected a method for finding file identifiers, proceeding with default logic")
+    elif os.path.isfile(pattern_source):
+        print(f"You have selected to use an input file for indentifiers, using file: {pattern_source}")
+    else:
+        print(f"You've input a custom string for identifiers, I will search using: {pattern_source}")
 
     os.makedirs(args.output, exist_ok=True)
 
