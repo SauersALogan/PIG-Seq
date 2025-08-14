@@ -81,7 +81,7 @@ def PAF_parsing(paf_file, assembly_file, identity_threshold = 0.95, coverage_thr
     print(f"The map has the following content:")
     print(f"{final_mapping}")
 
-def run_paf_parsing(paf_files, assembly_files, identity_threshold = 0.95, coverage_threshold = 0.8, quality_threshold = 40):
+def run_paf_parsing(paf_files, assembly_files, identity_threshold = 0.95, coverage_threshold = 0.8, quality_threshold = 40, pattern_source=None):
     """Parse PAF files to select bins meeting user requirement specifications"""
     if isinstance(paf_files, str) and isinstance (assembly_files, str):
         paf_file = paf_files
@@ -92,7 +92,7 @@ def run_paf_parsing(paf_files, assembly_files, identity_threshold = 0.95, covera
     elif isinstance(paf_files, list) and isinstance(assembly_files, str):
         print("It seems you have provided multiple paf files for a single assembly, this is not really useful, exiting")
     elif isinstance(paf_files, list) and isinstance(assembly_files, list):
-        paired_files = pair_files_by_sample(paf_files, assembly_files)
+        paired_files = pair_files_by_sample(paf_files, assembly_files, pattern_source=pattern_source)
         if not paired_files:
             print(f"DEBUG: No matching file pairs found, please check the documentation")
         for paf_file, assembly_file in paired_files:

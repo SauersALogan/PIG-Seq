@@ -50,7 +50,7 @@ def feature_parsing(map_file, feature_file):
     print(f"Resulting gene to bin to count data written to: {output_path}")
     return features
 
-def run_parsing(map_files, feature_files):
+def run_parsing(map_files, feature_files, pattern_source=None):
     """Run the parsing function above on varies file input formats"""
     final_results = []
     if isinstance(feature_files, str) and isinstance(map_files, str):
@@ -63,7 +63,7 @@ def run_parsing(map_files, feature_files):
     elif isinstance(feature_files, str) and isinstance(map_files, list):
         print("You provided a list of mapping files for a single feature file, this tells me something is wrong, check inputs")
     elif isinstance(feature_files, list) and isinstance(map_files, list):
-        paired_files = pair_files_by_sample(feature_files, map_files)
+        paired_files = pair_files_by_sample(feature_files, map_files, pattern_source=pattern_source)
         if not paired_files:
             print(f"DEBUG: No matching file pairs found, please check your file naming conventions or check the documentation")
             return final_results

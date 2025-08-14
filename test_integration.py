@@ -171,6 +171,7 @@ class TestFullPipeline:
         Test to check if we're ready for integration testing.
         This test checks if individual functions can be imported.
         """
+        pattern_source = None
         # Step 1: Align
         aligned_paf_files = run_alignment(sample_bins, multiple_assemblies)
         if aligned_paf_files and all(os.path.exists(paf_file) for paf_file in aligned_paf_files):

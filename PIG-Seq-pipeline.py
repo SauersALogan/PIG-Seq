@@ -4,10 +4,17 @@
 # Imports
 ##################################################################################
 
+import pytest
 import tempfile
 import os
-import pytest
 import subprocess
+import pandas as pd
+from Bio.Seq import Seq
+from Bio.SeqRecord import SeqRecord
+from Bio import SeqIO
+import random
+import re
+import shutil
 import argparse
 import glob
 
@@ -20,8 +27,11 @@ import glob
 ##################################################################################
 # Core Logic
 ##################################################################################
-
 from individual_functions.contig_mapping import build_minimap2_command, run_alignment
+from individual_functions.PAF_parsing import PAF_parsing, run_paf_parsing
+from individual_functions.feature_counting import build_featureCounts, execute_feature_counting, run_counter
+from individual_functions.feature_parsing import extract_file_identifiers, pair_files_by_sample, feature_parsing, run_parsing
+from utils.file_pairing import extract_file_identifiers, pair_files_by_sample
 
 ##################################################################################
 # Command line interfacing
@@ -82,22 +92,29 @@ if __name__ == "__main__":
     else:
         print("No bin files found")
 
+    if sam_files:
+        print("Sam files:")
+        for file in sam_files:
+            print(f" - {file}")
+    else:
+        print("No sam files found")
+
+    if gtf_files:
+        print("GTF files:")
+        for file in gtf_files:
+            print(f" - {file}")
+    else:
+        print("No GTF files found")
+
     os.makedirs(args.output, exist_ok=True)
 
-    failed_alignments=[]
-
-    for assembly in assembly_files:
-        for bin in bin_files:
-            assembly_base=os.path.basename(assembly)
-            assembly_name=os.path.splitext(assembly_base)[0]
-            bin_base=os.path.basename(bin)
-            bin_name=os.path.splitext(bin_base)[0]
-            output_name=assembly_name+"_"+bin_name+".paf"
-            output_path=os.path.join(args.output, output_name)
-            result = run_alignment(assembly, bin, output_path)
-
-            if result:
-                print(f"Aligned {assembly_name} to {bin_name}")
-            else:
-                print(f"Failed to align {assembly_name} to {bin_name}")
-                failed_alignments.append(assembly)
+    aligned_paf_files = run_alignment(bin_files, assembly_files)
+    run_paf_parsing(aligned_paf_files, assembly_files)
+    results = run_counter(sam_files, gtf_files, threads=2, gene="CDS", gene_id="gene_id")
+    feature_parsing_results = run_parsing(expected_outputs, results)
+    expected_feature_outputs = []
+        for count_file in results:
+            count_base = os.path.basename(count_file)
+            count_name = os.path.splitext(count_base)[0]
+            feature_output = count_name + "_binned.txt"
+            expected_feature_outputs.append(feature_output)

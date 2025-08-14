@@ -23,26 +23,47 @@ import shutil
 # =============================================================================
 # Actual functions to test
 # =============================================================================
-def extract_file_identifiers(filename):
+def extract_file_identifiers(filename, pattern_source = None):
     """Extracts the similar file identifier for all input files to ensure proper pairing.
-    First it looks for common patterns such as Sample_XXX, then numerical suffixes such as sample1. If these fail
-    it will finish by looking at the last part of the file after controlling for common delimiters"""
+
+       Args:
+       filename: Path to files
+       pattern_source: One of:
+           - None: Uses a default pattern matching which pulls numbers from file name strings to match
+           - String: A custom regex pattern for matching
+           - File path: A text file with 1 identifier to match by per line
+
+"""
     basename = os.path.basename(filename)
     basename = re.sub(r'\.(txt|sam|bam|gtf|gff|paf|fasta|fa|fastq|fq)$', '', basename, flags=re.IGNORECASE)
-    match = re.search(r'(\d+)', basename)
-    if match:
-        return match.group(1)
-    return basename
 
-def pair_files_by_sample(files_list1, files_list2, list1_name="files1", list2_name="files2"):
+    if pattern_source is None:
+        match = re.search(r'(\d+)', basename)
+        if match:
+            return match.group(1)
+        return basename
+    elif os.path.isfile(pattern_source):
+        with open(pattern_source, 'r') as file:
+            identifiers = [line.strip() for line in file if line.strip()]
+        for identifier in identifiers:
+            if identifier in basename:
+                return identifier
+        return basename
+    else:
+        match = re.search(pattern_source, basename)
+        if match:
+            return match.group(1) if match.groups() else match.group(0)
+        return basename
+
+def pair_files_by_sample(files_list1, files_list2, list1_name="files1", list2_name="files2", pattern_source=None):
     """This function will pair files based upon the layouts controlled for in the function above"""
     list1_files_by_id = {}
     for file in files_list1:
-        identifier = extract_file_identifiers(file)
+        identifier = extract_file_identifiers(file, pattern_source)
         list1_files_by_id[identifier] = file
     list2_files_by_id = {}
     for file in files_list2:
-        identifier = extract_file_identifiers(file)
+        identifier = extract_file_identifiers(file, pattern_source)
         list2_files_by_id[identifier] = file
     paired_files = []
     unmatched_list1 = []
