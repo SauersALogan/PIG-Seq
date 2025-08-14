@@ -157,9 +157,10 @@ read10	0	a2_contig3	350	60	100M	*	0	0	ACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTAC
 # Import the functions from the individual_functions folder
 # =============================================================================
 from individual_functions.contig_mapping import build_minimap2_command, run_alignment
-from individual_functions.PAF_parsing import extract_file_identifiers, pair_files_by_sample, PAF_parsing, run_paf_parsing
+from individual_functions.PAF_parsing import PAF_parsing, run_paf_parsing
 from individual_functions.feature_counting import build_featureCounts, execute_feature_counting, run_counter
 from individual_functions.feature_parsing import extract_file_identifiers, pair_files_by_sample, feature_parsing, run_parsing
+from utils.file_pairing import extract_file_identifiers, pair_files_by_sample
 
 # =============================================================================
 # Integration test - Test functions working together
@@ -186,8 +187,7 @@ class TestFullPipeline:
         # Step 2: Parse the PAF output
         binned_reads = ["a1_contig1", "a2_contig2"]
         unbinned_reads = ["a1_contig2", "a1_contig3", "a1_contig4", "a2_contig1", "a2_contig3", "a2_contig4"]
-        for paf_file in aligned_paf_files:
-            run_paf_parsing(paf_file)
+        run_paf_parsing(aligned_paf_files, multiple_assemblies)
         expected_outputs = [os.path.splitext(input_file)[0] + "_contigs_to_bin_mapping.txt" for input_file in aligned_paf_files]
         if all(os.path.exists(output_file) for output_file in expected_outputs):
             for input_file in aligned_paf_files:
