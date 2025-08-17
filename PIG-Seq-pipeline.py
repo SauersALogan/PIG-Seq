@@ -55,22 +55,24 @@ if __name__ == "__main__":
 
     bin_files = []
     for pattern in args.bins:
-        expanded = glob.glob(pattern)
-        if expanded:
-            bin_files.extend(expanded)
+        if os.path.isdir(pattern):
+            bin_files.extend(glob.glob(os.path.join(pattern, "*.fasta")))
+            bin_files.extend(glob.glob(os.path.join(pattern, "*.fa")))
+            bin_files.extend(glob.glob(os.path.join(pattern, "*.fas")))
         else:
-            if os.path.isdir(pattern):
-                bin_files.extend(glob.glob(os.path.join(pattern, "*.fasta")))
-                bin_files.extend(glob.glob(os.path.join(pattern, "*.fa")))
-                bin_files.extend(glob.glob(os.path.join(pattern, "*.fas")))
+            expanded = glob.glob(pattern)
+            if expanded:
+                bin_files.extend(expanded)
+            else:
+                print(f"Warning: No files found for pattern: {pattern}")
 
     sam_files = []
-    for pattern in arg.sam_files:
+    for pattern in args.sam_files:
         sam_files.extend(glob.glob(pattern))
     sam_files.sort()
 
     gtf_files = []
-    for pattern in arg.gtf_files:
+    for pattern in args.gtf_files:
         gtf_files.extend(glob.glob(pattern))
     gtf_files.sort()
 
@@ -115,13 +117,29 @@ if __name__ == "__main__":
 
     os.makedirs(args.output, exist_ok=True)
 
+    print("\n=== Running alignment ===")
     aligned_paf_files = run_alignment(bin_files, assembly_files)
+    for paf_file in aligned_paf_files:
+        print(f" - {paf_file:3}")
+        print(f" - ... and {len(paf_file) - 3} additional lines")
+
+    print("\n=== Running PAF parsing ===")
     run_paf_parsing(aligned_paf_files, assembly_files)
+    print(f"PAF parsing - Type: {type(paf_parsing_results)}, Length/Value: {len(paf_parsing_results) if hasattr(paf_parsing_results, '__len__') else paf_parsing_results}")
+
+    print("\n=== Running feature counting ===")
     results = run_counter(sam_files, gtf_files, threads=2, gene="CDS", gene_id="gene_id")
+    print(f"Feature counting - Type: {type(results)}, Count: {len(results) if results else 0}")
+    print(f" - Files contain: {results[:2]} and ... (+{len(results)-2} additional lines)")
+
+    print("\n=== Running feature parsing ===")
     feature_parsing_results = run_parsing(expected_outputs, results)
+    print(f"Feature parsing - Type: {type(feature_parsing_results)}, Result: {feature_parsing_results}")
+
+    print("\n=== Preparing expected outputs ===")
     expected_feature_outputs = []
-        for count_file in results:
-            count_base = os.path.basename(count_file)
-            count_name = os.path.splitext(count_base)[0]
-            feature_output = count_name + "_binned.txt"
-            expected_feature_outputs.append(feature_output)
+    for count_file in results:
+        count_base = os.path.basename(count_file)
+        count_name = os.path.splitext(count_base)[0]
+        feature_output = count_name + "_binned.txt"
+        expected_feature_outputs.append(feature_parsing_results)

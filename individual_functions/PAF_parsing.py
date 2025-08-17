@@ -25,8 +25,8 @@ from utils.file_pairing import extract_file_identifiers, pair_files_by_sample
 # =============================================================================
 # Actual functions to test
 # =============================================================================
-def PAF_parsing(paf_file, assembly_file, identity_threshold = 0.95, coverage_threshold = 0.8, quality_threshold = 40):
-    paf = pd.read_csv(paf_file, delimiter='\t', header=None, dtype={
+def PAF_parsing(paf_file, assembly_file, bin_files, identity_threshold = 0.95, coverage_threshold = 0.8, quality_threshold = 40):
+    paf = pd.read_csv(paf_file, delimiter='\t', header=None, usecols=range(12), dtype={
         1: 'int64', # query_length
         2: 'int64', # query_start
         3: 'int64', # query_end
@@ -52,8 +52,22 @@ def PAF_parsing(paf_file, assembly_file, identity_threshold = 0.95, coverage_thr
     (paf_alignment_quality > quality_threshold)]
     print(f"DEBUG: Content in good alignments is:")
     print(f"{good_alignments}")
-    mapping = good_alignments[[0, 5]].drop_duplicates()
+
+    target_contig_to_bin_file = {}
+    for bin_file in bin_files:
+        bin_filename = os.path.basename(bin_file)
+        with open(bin_file, 'r') as f:
+            for line in f:
+                if line.startswith('>'):
+                    contig_name = line[1:].split()[0]
+                    target_contig_to_bin_file[contig_name] = bin_filename
+
+    good_alignments = good_alignments.copy()
+    good_alignments['Bin_File'] = good_alignments[5].map(target_contig_to_bin_file)
+
+    mapping = good_alignments[[0, 'Bin_File']].dropna().drop_duplicates()
     mapping.columns = ['Contig', 'Bin']
+
     print(f"DEBUG: Content in mapping is:")
     print(f"DEBUG: {mapping}")
     passed_contigs = mapping['Contig'].unique()
@@ -81,12 +95,12 @@ def PAF_parsing(paf_file, assembly_file, identity_threshold = 0.95, coverage_thr
     print(f"The map has the following content:")
     print(f"{final_mapping}")
 
-def run_paf_parsing(paf_files, assembly_files, identity_threshold = 0.95, coverage_threshold = 0.8, quality_threshold = 40, pattern_source=None):
+def run_paf_parsing(paf_files, assembly_files, bin_files, identity_threshold = 0.95, coverage_threshold = 0.8, quality_threshold = 40, pattern_source=None):
     """Parse PAF files to select bins meeting user requirement specifications"""
     if isinstance(paf_files, str) and isinstance (assembly_files, str):
         paf_file = paf_files
         assembly_file = assembly_files
-        PAF_parsing(paf_file, assembly_file)
+        PAF_parsing(paf_file, assembly_file, bin_files)
     elif isinstance(paf_files, str) and isinstance(assembly_files, list):
         print("It seems you have provided one paf file for multiple assembly files, this seems odd, exiting")
     elif isinstance(paf_files, list) and isinstance(assembly_files, str):
@@ -96,7 +110,7 @@ def run_paf_parsing(paf_files, assembly_files, identity_threshold = 0.95, covera
         if not paired_files:
             print(f"DEBUG: No matching file pairs found, please check the documentation")
         for paf_file, assembly_file in paired_files:
-            PAF_parsing(paf_file, assembly_file)
+            PAF_parsing(paf_file, assembly_file, bin_files)
 
 # =============================================================================
 # Create the mock data for testing
@@ -190,14 +204,38 @@ CCGGAATTCC
         assembly_files.append(assembly_file)
     return assembly_files
 
+@pytest.fixture
+def sample_bins(temp_test_dir):
+    """Create bin files that contain the target sequences from the PAF test data."""
+
+    bin1_content = """>contig_1
+ATCGATCGATCGATCGATCGATCGATCGATCGATCGATCGATCGATCGATCGATCGATCG
+GCTAGCTAGCTAGCTAGCTAGCTAGCTAGCTAGCTAGCTAGCTAGCTAGCTAGCTAGCTAG
+>bin1_scaffold2
+TTAAGGCCAATTAAGGCCAATTAAGGCCAATTAAGGCCAATTAAGGCCAATTAAGGCCAA"""
+
+    bin2_content = """>contig_4
+GGCCAATTGGCCAATTGGCCAATTGGCCAATTGGCCAATTGGCCAATTGGCCAATTGGCC
+AATTGGCCTTAATTGGCCTTAATTGGCCTTAATTGGCCTTAATTGGCCTTAATTGGCCTT
+>bin2_scaffold2
+CCGGAATTCCGGAATTCCGGAATTCCGGAATTCCGGAATTCCGGAATTCCGGAATTCCGG"""
+
+    bin_files = []
+    for i, content in enumerate([bin1_content, bin2_content], 1):
+        bin_file = os.path.join(temp_test_dir, f'test_bin{i}.fasta')
+        with open(bin_file, 'w') as f:
+            f.write(content)
+        bin_files.append(bin_file)
+    return bin_files
+
 # =============================================================================
 # Setup the actual tests
 # =============================================================================
-def test_single_paf(single_paf, single_assembly):
+def test_single_paf(single_paf, single_assembly, sample_bins):
     """Test that the parsing function works on a single paf file"""
     binned_read = "read_001"
     unbinned_reads = ["read_002", "read_003", "read_004"]
-    run_paf_parsing(single_paf[0], single_assembly[0])
+    run_paf_parsing(single_paf[0], single_assembly[0], sample_bins)
     for input_file in single_paf:
         expected_output = os.path.splitext(input_file)[0] + "_contigs_to_bin_mapping.txt"
         output_file = pd.read_csv(expected_output, delimiter='\t', header=0)
@@ -206,22 +244,22 @@ def test_single_paf(single_paf, single_assembly):
         print(f"{output_file}")
         binned = output_file.loc[output_file['Contig'] == binned_read]
         unbinned = output_file.loc[output_file['Contig'].isin(unbinned_reads)]
-        assert binned['Bin'].iloc[0] in ["contig_1", "contig_4"], f"read_001 incorrectly assigned to {binned['Bin'].iloc[0]}"
+        assert binned['Bin'].iloc[0] in ["test_bin2.fasta", "test_bin1.fasta"], f"read_001 incorrectly assigned to {binned['Bin'].iloc[0]}"
         for _, row in unbinned.iterrows():
             assert row['Bin'] == "unbinned", f"{row['Contig']} should be unbinned but assigned to {row['Bin']}!"
 
-def test_multiple_pafs(multiple_pafs, multiple_assemblies):
+def test_multiple_pafs(multiple_pafs, multiple_assemblies, sample_bins):
     """Test that parsing function works on multiple pafs"""
     binned_read = "read_001"
     unbinned_reads = ["read_002", "read_003", "read_004"]
-    run_paf_parsing(multiple_pafs, multiple_assemblies)
+    run_paf_parsing(multiple_pafs, multiple_assemblies, sample_bins)
     for input_file in multiple_pafs:
         expected_output = os.path.splitext(input_file)[0] + "_contigs_to_bin_mapping.txt"
         output_file = pd.read_csv(expected_output, delimiter='\t', header=0)
         read_names = output_file.iloc[:, 0].tolist()
         binned = output_file.loc[output_file['Contig'] == binned_read]
         unbinned = output_file.loc[output_file['Contig'].isin(unbinned_reads)]
-        assert binned['Bin'].iloc[0] in ["contig_1", "contig_4"], f"read_001 incorrectly assigned to {binned['Bin'].iloc[0]}"
+        assert binned['Bin'].iloc[0] in ["test_bin1.fasta", "test_bin2.fasta"], f"read_001 incorrectly assigned to {binned['Bin'].iloc[0]}"
         for _, row in unbinned.iterrows():
             assert row['Bin'] == "unbinned", f"{row['Contig']} should be unbinned but assigned to {row['Bin']}!"
 

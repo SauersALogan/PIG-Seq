@@ -188,7 +188,7 @@ class TestFullPipeline:
         # Step 2: Parse the PAF output
         binned_reads = ["a1_contig1", "a2_contig2"]
         unbinned_reads = ["a1_contig2", "a1_contig3", "a1_contig4", "a2_contig1", "a2_contig3", "a2_contig4"]
-        run_paf_parsing(aligned_paf_files, multiple_assemblies)
+        run_paf_parsing(aligned_paf_files, multiple_assemblies, sample_bins)
         expected_outputs = [os.path.splitext(input_file)[0] + "_contigs_to_bin_mapping.txt" for input_file in aligned_paf_files]
         if all(os.path.exists(output_file) for output_file in expected_outputs):
             for input_file in aligned_paf_files:
@@ -200,7 +200,7 @@ class TestFullPipeline:
                 binned = output_file.loc[output_file['Contig'].isin(binned_reads)]
                 unbinned = output_file.loc[output_file['Contig'].isin(unbinned_reads)]
                 for _, row in binned.iterrows():
-                    assert row['Bin'] == "bin1_scaffold1", f"{row['Contig']} incorrectly assigned to {binned['Bin'].iloc[0]}"
+                    assert row['Bin'] == "test_bin1.fasta", f"{row['Contig']} incorrectly assigned to {binned['Bin'].iloc[0]}"
                 for _, row in unbinned.iterrows():
                     assert row['Bin'] == "unbinned", f"{row['Contig']} should be unbinned but assigned to {row['Bin']}!"
             print(f"✅ PAF parsing completed and tests all passed!")
@@ -259,7 +259,7 @@ class TestFullPipeline:
                 binned_genes = binned_counts[binned_counts['Chr'].isin(['a1_contig1', 'a2_contig2'])]
                 unbinned_genes = binned_counts[binned_counts['Chr'].isin(['a1_contig2', 'a1_contig3', 'a1_contig4', 'a2_contig1', 'a2_contig3', 'a2_contig4'])]
                 for _, row in binned_genes.iterrows():
-                    assert row['binning'] in ["bin1_scaffold1", "bin2_scaffold1"], f"Gene {row['Geneid']} incorrectly assigned: {row['binning']}"
+                    assert row['binning'] in ["test_bin1.fasta"], f"Gene {row['Geneid']} incorrectly assigned: {row['binning']}"
                 for _, row in unbinned_genes.iterrows():
                     assert row['binning'] == "unbinned", f"Gene {row['Geneid']} should be unbinned but assigned to {row['binning']}"
             print(f"✅ Feature parsing completed and tests all passed!")
