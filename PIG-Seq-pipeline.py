@@ -124,17 +124,25 @@ if __name__ == "__main__":
         print(f" - ... and {len(paf_file) - 3} additional lines")
 
     print("\n=== Running PAF parsing ===")
-    run_paf_parsing(aligned_paf_files, assembly_files)
-    print(f"PAF parsing - Type: {type(paf_parsing_results)}, Length/Value: {len(paf_parsing_results) if hasattr(paf_parsing_results, '__len__') else paf_parsing_results}")
+    mapping_files = run_paf_parsing(aligned_paf_files, assembly_files, bin_files)
+    print(f"Created mapping files: {mapping_files}")
+    for mapping_file in mapping_files:
+        print(f"\n=== First 5 lines of {mapping_file} ===")
+        try:
+            with open(mapping_file, 'r') as f:
+                for i, line in enumerate(f):
+                    if i >= 5:  # Stop after 5 lines
+                        break
+                    print(line.strip())
+        except FileNotFoundError:
+            print(f"Warning: File {mapping_file} not found")
+        except Exception as e:
+            print(f"Error reading {mapping_file}: {e}")
 
     print("\n=== Running feature counting ===")
-    results = run_counter(sam_files, gtf_files, threads=2, gene="CDS", gene_id="gene_id")
+    results = run_counter(sam_files, gtf_files, threads=2, gene="CDS", gene_id="locus_tag")
     print(f"Feature counting - Type: {type(results)}, Count: {len(results) if results else 0}")
     print(f" - Files contain: {results[:2]} and ... (+{len(results)-2} additional lines)")
-
-    print("\n=== Running feature parsing ===")
-    feature_parsing_results = run_parsing(expected_outputs, results)
-    print(f"Feature parsing - Type: {type(feature_parsing_results)}, Result: {feature_parsing_results}")
 
     print("\n=== Preparing expected outputs ===")
     expected_feature_outputs = []
@@ -143,3 +151,8 @@ if __name__ == "__main__":
         count_name = os.path.splitext(count_base)[0]
         feature_output = count_name + "_binned.txt"
         expected_feature_outputs.append(feature_parsing_results)
+
+    print("\n=== Running feature parsing ===")
+    feature_parsing_results = run_parsing(mapping_files, results)
+    print(f"Feature parsing - Type: {type(feature_parsing_results)}, Result: {feature_parsing_results}")
+

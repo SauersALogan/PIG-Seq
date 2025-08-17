@@ -97,10 +97,14 @@ def PAF_parsing(paf_file, assembly_file, bin_files, identity_threshold = 0.95, c
 
 def run_paf_parsing(paf_files, assembly_files, bin_files, identity_threshold = 0.95, coverage_threshold = 0.8, quality_threshold = 40, pattern_source=None):
     """Parse PAF files to select bins meeting user requirement specifications"""
+    output_files = []
     if isinstance(paf_files, str) and isinstance (assembly_files, str):
         paf_file = paf_files
         assembly_file = assembly_files
         PAF_parsing(paf_file, assembly_file, bin_files)
+        paf_name = os.path.splitext(paf_file)[0]
+        expected_output = f"{paf_name}_contigs_to_bin_mapping.txt"
+        output_files.append(expected_output)
     elif isinstance(paf_files, str) and isinstance(assembly_files, list):
         print("It seems you have provided one paf file for multiple assembly files, this seems odd, exiting")
     elif isinstance(paf_files, list) and isinstance(assembly_files, str):
@@ -111,6 +115,10 @@ def run_paf_parsing(paf_files, assembly_files, bin_files, identity_threshold = 0
             print(f"DEBUG: No matching file pairs found, please check the documentation")
         for paf_file, assembly_file in paired_files:
             PAF_parsing(paf_file, assembly_file, bin_files)
+            paf_name = os.path.splitext(paf_file)[0]
+            expected_output = f"{paf_name}_contigs_to_bin_mapping.txt"
+            output_files.append(expected_output)
+    return output_files
 
 # =============================================================================
 # Create the mock data for testing
