@@ -124,7 +124,8 @@ if __name__ == "__main__":
         print(f" - ... and {len(paf_file) - 3} additional lines")
 
     print("\n=== Running PAF parsing ===")
-    mapping_files = run_paf_parsing(aligned_paf_files, assembly_files, bin_files)
+    run_paf_parsing(aligned_paf_files, assembly_files, bin_files)
+    mapping_files = [os.path.splitext(paf_file)[0] + "_contigs_to_bin_mapping.txt" for paf_file in aligned_paf_files]
     print(f"Created mapping files: {mapping_files}")
     for mapping_file in mapping_files:
         print(f"\n=== First 5 lines of {mapping_file} ===")
@@ -140,9 +141,16 @@ if __name__ == "__main__":
             print(f"Error reading {mapping_file}: {e}")
 
     print("\n=== Running feature counting ===")
-    results = run_counter(sam_files, gtf_files, threads=2, gene="CDS", gene_id="locus_tag")
+    results = run_counter(sam_files, gtf_files, threads=2, gene="CDS", gene_id="locus_tag", paired_end=True)
     print(f"Feature counting - Type: {type(results)}, Count: {len(results) if results else 0}")
-    print(f" - Files contain: {results[:2]} and ... (+{len(results)-2} additional lines)")
+    if results and len(results) >= 2:
+        print(f" - Files contain: {results[:2]} and ... (+{len(results)-2} additional files)")
+    elif results:
+        print(f" - Files: {results}")
+
+    print("\n=== Running feature parsing ===")
+    feature_parsing_results = run_parsing(mapping_files, results)
+    print(f"Feature parsing - Type: {type(feature_parsing_results)}, Result: {feature_parsing_results}")
 
     print("\n=== Preparing expected outputs ===")
     expected_feature_outputs = []
@@ -150,9 +158,4 @@ if __name__ == "__main__":
         count_base = os.path.basename(count_file)
         count_name = os.path.splitext(count_base)[0]
         feature_output = count_name + "_binned.txt"
-        expected_feature_outputs.append(feature_parsing_results)
-
-    print("\n=== Running feature parsing ===")
-    feature_parsing_results = run_parsing(mapping_files, results)
-    print(f"Feature parsing - Type: {type(feature_parsing_results)}, Result: {feature_parsing_results}")
-
+        expected_feature_outputs.append(feature_output)

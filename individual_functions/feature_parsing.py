@@ -48,7 +48,7 @@ def feature_parsing(map_file, feature_file):
     features['binning'] = results
     features.to_csv(f"{output_path}", sep="\t", header=True, index = False)
     print(f"Resulting gene to bin to count data written to: {output_path}")
-    return features
+    return output_path
 
 def run_parsing(map_files, feature_files, pattern_source=None):
     """Run the parsing function above on varies file input formats"""

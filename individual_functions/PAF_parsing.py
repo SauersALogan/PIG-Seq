@@ -94,6 +94,7 @@ def PAF_parsing(paf_file, assembly_file, bin_files, identity_threshold = 0.95, c
     print(f"Contig-to-bin mapping file written to: {mapping_output}")
     print(f"The map has the following content:")
     print(f"{final_mapping}")
+    return mapping_output
 
 def run_paf_parsing(paf_files, assembly_files, bin_files, identity_threshold = 0.95, coverage_threshold = 0.8, quality_threshold = 40, pattern_source=None):
     """Parse PAF files to select bins meeting user requirement specifications"""
