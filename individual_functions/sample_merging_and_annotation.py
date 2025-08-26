@@ -26,6 +26,25 @@ from utils.file_pairing import extract_file_identifiers, pair_files_by_sample
 # =============================================================================
 # Actual functions to test
 # =============================================================================
+def TPM_calculation(count_file, gff_file):
+    count_file = pd.read_csv(count_file, delimiter='\t', header=True)
+    count_col = count_file.columns[-2]
+    total_counts = count_file[count_col].sum()
+    count_file['CPM'] = (count_file[count_col] / total_counts) * 1_000_000
+    count_file['RPK'] = count_file[count_col] / (count_file['Length'] / 1000)
+    total_RPK = count_file['RPK'].sum()
+    count_file['TPM'] = (count_file['RPK'] / total_RPK) * 1_000_000
+
+    count_base = os.path.basename(count_file_path)
+    count_name = os.path.splitext(count_base)[0]
+    output_name = count_name + "_normalized.txt"
+    output_path = output_name
+
+    count_file.to_csv(output_path, sep='\t', index=False)
+    return output_path
+
+def Annotate_normalized_data(count_file, gff_file)
+
 
 # =============================================================================
 # Create the mock data for testing
@@ -40,7 +59,7 @@ def temp_test_dir():
 @pytest.fixture
 def single_sample(temp_test_dir):
     """Creating a single sample fixture for testing"""
-    binned_content = """Geneid	Chr	Start	End	Strand	Length	TIP-Seq_mapping/S20_Native_mapping_renamed_contigs/S20_Native_mapped.sam	binning
+    content = """Geneid	Chr	Start	End	Strand	Length	TIP-Seq_mapping/S20_Native_mapping_renamed_contigs/S20_Native_mapped.sam	binning
 PROKKA_00003	Contig00001	626	835	-	210	65	S29_Nativebin.10.fa
 PROKKA_00004	Contig00001	1099	2196	-	1098	179	S29_Nativebin.10.fa
 PROKKA_00005	Contig00001	2302	2595	-	294	27	S29_Nativebin.10.fa
@@ -50,7 +69,7 @@ PROKKA_00007	Contig00002	1000	1500	-	501	23	unbinned
 
     sample_file = os.path.join(temp_test_dir, 'Test_sample1.txt')
     with open(sample_file, 'w') as f:
-        f.write(binned_content)
+        f.write(content)
     return sample_file
 
 @pytest.fixture
