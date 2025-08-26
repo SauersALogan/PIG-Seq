@@ -26,7 +26,7 @@ from utils.file_pairing import extract_file_identifiers, pair_files_by_sample
 # =============================================================================
 # Actual functions to test
 # =============================================================================
-def TPM_calculation(count_file, gff_file):
+def normalize_and_annotate(count_file, gff_file):
     count_file = pd.read_csv(count_file, delimiter='\t', header=True)
     count_col = count_file.columns[-2]
     total_counts = count_file[count_col].sum()
@@ -35,6 +35,14 @@ def TPM_calculation(count_file, gff_file):
     total_RPK = count_file['RPK'].sum()
     count_file['TPM'] = (count_file['RPK'] / total_RPK) * 1_000_000
 
+    gff = pd.read_csv(gff_file, delimiter='\t', comment='#', header=None)
+    cds_df = gff_df[gff_df[2] == 'CDS'].copy()
+    cds_df['locus_tag'] = cds_df[8].str.extract(r'locus_tag=([^;]+)')
+    cds_df['product'] = cds_df[8].str.extract(r'product=([^;]+)')
+    cds_df['product'] = cds_df['product'].fillna('hypothetical protein')
+    annotations = dict(zip(cds_df['locus_tag'], cds_df['product']))
+    count_file['product'] = count_file['Geneid'].map(annotations)
+
     count_base = os.path.basename(count_file_path)
     count_name = os.path.splitext(count_base)[0]
     output_name = count_name + "_normalized.txt"
@@ -42,9 +50,6 @@ def TPM_calculation(count_file, gff_file):
 
     count_file.to_csv(output_path, sep='\t', index=False)
     return output_path
-
-def Annotate_normalized_data(count_file, gff_file)
-
 
 # =============================================================================
 # Create the mock data for testing
