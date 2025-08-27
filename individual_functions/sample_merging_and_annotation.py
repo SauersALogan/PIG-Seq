@@ -50,6 +50,7 @@ def normalize_and_annotate(count_file, gff_file):
     output_path = output_name
 
     counts.to_csv(output_path, sep='\t', index=False)
+    print(f"Saving counts to {output_path}")
     return output_path
 
 def run_norm_anno(count_files, gff_files, pattern_source=None):

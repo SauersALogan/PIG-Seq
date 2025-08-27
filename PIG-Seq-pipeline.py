@@ -153,18 +153,10 @@ if __name__ == "__main__":
     feature_parsing_results = run_parsing(mapping_files, results)
     print(f"Feature parsing - Type: {type(feature_parsing_results)}, Result: {feature_parsing_results}")
 
-    print("\n=== Preparing expected outputs ===")
-    expected_feature_outputs = []
-    for count_file in results:
-        count_base = os.path.basename(count_file)
-        count_name = os.path.splitext(count_base)[0]
-        feature_output = count_name + "_binned.txt"
-        expected_feature_outputs.append(feature_output)
-
-    print("n=== Annotating and normalizing output ===")
-    result_files = run_norm_anno(expected_feature_outputs, gff_files)
-    if results and len(results) >= 2:
-        print(f" - Files contain: {results[:2]} and ... (+{len(results)-2} additional files)")
-    elif results:
-        print(f" - Files: {results}")
+    print("\n=== Annotating and normalizing output ===")
+    result_files = run_norm_anno(feature_parsing_results, gff_files)
+    if result_files and len(result_files) >= 2:
+        print(f" - Files contain: {result_files[:2]} and ... (+{len(result_files)-2} additional files)")
+    elif result_files:
+        print(f" - Files: {result_files}")
 

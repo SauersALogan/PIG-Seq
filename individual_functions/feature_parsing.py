@@ -42,8 +42,6 @@ def feature_parsing(map_file, feature_file):
     headers = list(map.columns.values)
     print(f"{headers}")
     map_dictionary = map.set_index('Contig')['Bin'].to_dict()
-    print("Created the following mapping")
-    print(f"{map_dictionary}")
     results = features['Chr'].map(map_dictionary)
     features['binning'] = results
     features.to_csv(f"{output_path}", sep="\t", header=True, index = False)
