@@ -30,6 +30,7 @@ from individual_functions.PAF_parsing import PAF_parsing, run_paf_parsing
 from individual_functions.feature_counting import build_featureCounts, execute_feature_counting, run_counter
 from individual_functions.feature_parsing import extract_file_identifiers, pair_files_by_sample, feature_parsing, run_parsing
 from utils.file_pairing import extract_file_identifiers, pair_files_by_sample
+from individual_functions.sample_merging_and_annotation import normalize_and_annotate, run_norm_anno
 
 ##################################################################################
 # Command line interfacing
@@ -39,7 +40,7 @@ parser.add_argument("--assemblies", nargs="+", required=True, help="The assembly
 parser.add_argument("--bins", nargs="+", required=True, help="The bin files")
 parser.add_argument("--output", required=True, help="Output directory")
 parser.add_argument("--sam_files", nargs="+", required=True, help="The directory containing SAM files")
-parser.add_argument("--gtf_files", nargs="+", required=True, help="The directory containing GTF files")
+parser.add_argument("--gff_files", nargs="+", required=True, help="The directory containing GFF files")
 parser.add_argument("--pattern_source", required=False, help="File or string for how identifiers should be handled")
 
 ##################################################################################
@@ -71,10 +72,10 @@ if __name__ == "__main__":
         sam_files.extend(glob.glob(pattern))
     sam_files.sort()
 
-    gtf_files = []
-    for pattern in args.gtf_files:
-        gtf_files.extend(glob.glob(pattern))
-    gtf_files.sort()
+    gff_files = []
+    for pattern in args.gff_files:
+        gff_files.extend(glob.glob(pattern))
+    gff_files.sort()
 
     # Load the pattern_source
     pattern_source = args.pattern_source
@@ -101,12 +102,12 @@ if __name__ == "__main__":
     else:
         print("No sam files found")
 
-    if gtf_files:
-        print("GTF files:")
-        for file in gtf_files:
+    if gff_files:
+        print("GFF files:")
+        for file in gff_files:
             print(f" - {file}")
     else:
-        print("No GTF files found")
+        print("No GFF files found")
 
     if pattern_source is None:
         print(f"You have not selected a method for finding file identifiers, proceeding with default logic")
@@ -141,7 +142,7 @@ if __name__ == "__main__":
             print(f"Error reading {mapping_file}: {e}")
 
     print("\n=== Running feature counting ===")
-    results = run_counter(sam_files, gtf_files, threads=2, gene="CDS", gene_id="locus_tag", paired_end=True)
+    results = run_counter(sam_files, gff_files, threads=2, gene="CDS", gene_id="locus_tag", paired_end=True)
     print(f"Feature counting - Type: {type(results)}, Count: {len(results) if results else 0}")
     if results and len(results) >= 2:
         print(f" - Files contain: {results[:2]} and ... (+{len(results)-2} additional files)")
@@ -159,3 +160,11 @@ if __name__ == "__main__":
         count_name = os.path.splitext(count_base)[0]
         feature_output = count_name + "_binned.txt"
         expected_feature_outputs.append(feature_output)
+
+    print("n=== Annotating and normalizing output ===")
+    result_files = run_norm_anno(expected_feature_outputs, gff_files)
+    if results and len(results) >= 2:
+        print(f" - Files contain: {results[:2]} and ... (+{len(results)-2} additional files)")
+    elif results:
+        print(f" - Files: {results}")
+
