@@ -52,7 +52,7 @@ def normalize_and_annotate(count_file, gff_file):
     counts.to_csv(output_path, sep='\t', index=False)
     return output_path
 
-def run_norm_anno(count_files, gff_files):
+def run_norm_anno(count_files, gff_files, pattern_source=None):
     """Run the function above on varies file input formats"""
     results = []
     if isinstance(count_files, str) and isinstance(gff_files, str):
@@ -60,9 +60,9 @@ def run_norm_anno(count_files, gff_files):
         gff_file = gff_files
         normalized_counts = normalize_and_annotate(count_file, gff_file)
         results.append(normalized_counts)
-    elif isinstance(feature_files, list) and isinstance(map_files, str):
+    elif isinstance(count_files, list) and isinstance(gff_files, str):
         print("You've given me multiple count files but a single gff, this is odd and not really what this tool is for")
-    elif isinstance(feature_files, str) and isinstance(map_files, list):
+    elif isinstance(count_files, str) and isinstance(gff_files, list):
         print("You've given me a list of gffs but only one count file, this tells me something is wrong, check inputs")
     elif isinstance(count_files, list) and isinstance(gff_files, list):
         paired_files = pair_files_by_sample(count_files, gff_files, pattern_source=pattern_source)
@@ -229,6 +229,33 @@ def test_single_assembly(single_sample, single_gff):
 
 def test_multiple_assemblies(multiple_samples, multiple_gffs):
     """Test that parsing function works on multiple samples/assemblies"""
+    result_files = run_norm_anno(multiple_samples, multiple_gffs)
+    assert len(result_files) == 3, "Should only return three files"
+    for i, file in enumerate(result_files):
+        assert os.path.exists(file), f"Output file {file} was not created"
+    results = []
+    for file in result_files:
+        df = pd.read_csv(file, sep='\t')
+        results.append(df)
+    for i, df in enumerate(results):
+        count_col = [col for col in df.columns if '.sam' in col][0]
+        assert df['CPM'].sum() == pytest.approx(1_000_000, rel=1e-3), f"Sample {i+1} CPM doesn't sum to 1M"
+        assert df['TPM'].sum() == pytest.approx(1_000_000, rel=1e-3), f"Sample {i+1} TPM doesn't sum to 1M"
+        assert not df['product'].isna().any(), f"Sample {i+1} has missing annotations"
+    print(f"DEBUG: Done checking count normalization proceeding to annotation checking")
+    all_products = set()
+    for df in results:
+        all_products.update(df['product'].unique())
+    expected_products = {'hypothetical protein', 'DNA polymerase', 'ribosomal protein L1',
+        'ATP synthase', 'tRNA synthetase'}
+    assert expected_products.issubset(all_products), f"Missing expected products: {expected_products - all_products}"
+    dna_pol_genes = []
+    for df in results:
+        dna_pol = df[df['product'] == 'DNA polymerase']
+        dna_pol_genes.extend(dna_pol['Geneid'].tolist())
+    assert len(set(dna_pol_genes)) == len(dna_pol_genes), "Duplicate gene IDs found"
+    assert len(dna_pol_genes) >= 2, "Should find DNA polymerase in multiple samples"
+    print(f"DEBUG: Annotation checking finished")
 
 @pytest.fixture(autouse=True)
 def cleanup_paf_files(request):
