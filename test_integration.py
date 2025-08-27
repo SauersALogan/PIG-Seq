@@ -294,6 +294,31 @@ class TestFullPipeline:
         try:
             assert len(result_files) == 2, "Should only return three files"
             print(f"Test passed, found 2 annotated and normalized output files")
+            for i, file in enumerate(result_files):
+                assert os.path.exists(file), f"Output file {file} was not created"
+            results = []
+            for file in result_files:
+                df = pd.read_csv(file, sep='\t')
+                results.append(df)
+            for i, df in enumerate(results):
+                count_col = [col for col in df.columns if '.sam' in col][0]
+                assert df['CPM'].sum() == pytest.approx(1_000_000, rel=1e-3), f"Sample {i+1} CPM doesn't sum to 1M"
+                assert df['TPM'].sum() == pytest.approx(1_000_000, rel=1e-3), f"Sample {i+1} TPM doesn't sum to 1M"
+                assert not df['product'].isna().any(), f"Sample {i+1} has missing annotations"
+                print(f"Transformations look approximately correct in sample {result_files[i]}")
+                all_products = set()
+                for df in results:
+                    all_products.update(df['product'].unique())
+                    expected_products = {'hypothetical protein', 'DNA polymerase', 'ribosomal protein',
+                        'ATP synthase', 'membrane protein', 'transcriptase', 'helicase'}
+                assert expected_products.issubset(all_products), f"Missing expected products: {expected_products - all_products}"
+                print(f"Expected genes found in sample {result_files[i]}")
+                dna_pol_genes = []
+            for df in results:
+                dna_pol = df[df['product'] == 'DNA polymerase']
+                dna_pol_genes.extend(dna_pol['Geneid'].tolist())
+            assert len(set(dna_pol_genes)) == len(dna_pol_genes), "Duplicate gene IDs found"
+            assert len(dna_pol_genes) >= 2, "Should find DNA polymerase in multiple samples"
         except AssertionError as e:
             print(f"Test failed: {e}")
             raise
