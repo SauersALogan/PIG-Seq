@@ -52,28 +52,6 @@ def normalize_and_annotate(count_file, gff_file):
     counts.to_csv(output_path, sep='\t', index=False)
     return output_path
 
-def run_norm_anno(count_files, gff_files):
-    """Run the function above on varies file input formats"""
-    results = []
-    if isinstance(count_files, str) and isinstance(gff_files, str):
-        count_file = count_files
-        gff_file = gff_files
-        normalized_counts = normalize_and_annotate(count_file, gff_file)
-        results.append(normalized_counts)
-    elif isinstance(feature_files, list) and isinstance(map_files, str):
-        print("You've given me multiple count files but a single gff, this is odd and not really what this tool is for")
-    elif isinstance(feature_files, str) and isinstance(map_files, list):
-        print("You've given me a list of gffs but only one count file, this tells me something is wrong, check inputs")
-    elif isinstance(count_files, list) and isinstance(gff_files, list):
-        paired_files = pair_files_by_sample(count_files, gff_files, pattern_source=pattern_source)
-        if not paired_files:
-            print(f"DEBUG: No matching file pairs found in your gff and count files, check file naming conventions or documentation")
-            return results
-        for count_file, gff_file in paired_files:
-            normalized_counts = normalize_and_annotate(count_file, gff_file)
-            results.append(normalized_counts)
-    return(results)
-
 # =============================================================================
 # Create the mock data for testing
 # =============================================================================
@@ -195,7 +173,7 @@ Contig00003	prokka	CDS	200	600	.	-	0	ID=PROKKA_00015;locus_tag=PROKKA_00015;prod
 # =============================================================================
 def test_single_assembly(single_sample, single_gff):
     """Test that the parsing function works on a single sample/assembly"""
-    result_file = run_norm_anno(single_sample, single_gff)
+    result_file = normalize_and_annotate(single_sample, single_gff)
     assert os.path.exists(result_file), "Output file was not created"
     result_df = pd.read_csv(result_file, sep='\t')
     print("Columns:", result_df.columns.tolist())
@@ -228,11 +206,12 @@ def test_single_assembly(single_sample, single_gff):
 def test_multiple_assemblies(multiple_samples, multiple_gffs):
     """Test that parsing function works on multiple samples/assemblies"""
 
+
 @pytest.fixture(autouse=True)
 def cleanup_paf_files(request):
     def cleanup():
         import glob
-        for file in glob.glob("*.txt"):
-            if os.path.exists(file):
-                os.unlink(file)
+        for sam_file in glob.glob("*.txt"):
+            if os.path.exists(sam_file):
+                os.unlink(sam_file)
     request.addfinalizer(cleanup)
