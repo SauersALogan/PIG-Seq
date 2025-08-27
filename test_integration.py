@@ -289,15 +289,14 @@ class TestFullPipeline:
         print(f"✅ Pipeline completed and tests all passed!")
 
         # Step 5: Take the count files which have been annotated by bin and transform the counts plus annotate the genes using gff
-        def test_multiple_assemblies(expected_feature_outputs, mock_gff_files):
-            """Test that parsing function works on multiple samples/assemblies"""
-            result_files = run_norm_anno(expected_feature_outputs, mock_gff_files)
-            try:
-                assert len(result_files) == 2, "Should only return three files"
-                print(f"Test passed, found 2 annotated and normalized output files")
-            except AssertionError as e:
-                print(f"Test failed: {e}")
-                raise
+        """Test that parsing function works on multiple samples/assemblies"""
+        result_files = run_norm_anno(expected_feature_outputs, mock_gff_files)
+        try:
+            assert len(result_files) == 2, "Should only return three files"
+            print(f"Test passed, found 2 annotated and normalized output files")
+        except AssertionError as e:
+            print(f"Test failed: {e}")
+            raise
 
 @pytest.fixture(autouse=True)
 def cleanup_test_files(request):
