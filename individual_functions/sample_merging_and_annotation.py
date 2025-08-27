@@ -196,10 +196,12 @@ Contig00003	prokka	CDS	200	600	.	-	0	ID=PROKKA_00015;locus_tag=PROKKA_00015;prod
 def test_single_assembly(single_sample, single_gff):
     """Test that the parsing function works on a single sample/assembly"""
     result_file = run_norm_anno(single_sample, single_gff)
+    assert len(result_file) == 1, "Should only return one file"
+    result_file = result_file[0]
     assert os.path.exists(result_file), "Output file was not created"
     result_df = pd.read_csv(result_file, sep='\t')
     print("Columns:", result_df.columns.tolist())
-    expected_columns = ['Geneid', 'Chr', 'Start', 'End', 'Strand', 'Length', 
+    expected_columns = ['Geneid', 'Chr', 'Start', 'End', 'Strand', 'Length',
                        'TIP-Seq_mapping/S20_Native_mapping_renamed_contigs/S20_Native_mapped.sam',
                        'binning', 'CPM', 'RPK', 'TPM', 'product']
     assert list(result_df.columns) == expected_columns, f"Column mismatch: {result_df.columns}"
