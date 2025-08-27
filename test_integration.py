@@ -180,7 +180,7 @@ from individual_functions.contig_mapping import build_minimap2_command, run_alig
 from individual_functions.PAF_parsing import PAF_parsing, run_paf_parsing
 from individual_functions.feature_counting import build_featureCounts, execute_feature_counting, run_counter
 from individual_functions.feature_parsing import extract_file_identifiers, pair_files_by_sample, feature_parsing, run_parsing
-from individual_functions.sample_merging_and_annotation import normalize_and_annotate, run_norm_anno
+from individual_functions.sample_normalization_and_annotation import normalize_and_annotate, run_norm_anno
 from utils.file_pairing import extract_file_identifiers, pair_files_by_sample
 
 # =============================================================================
