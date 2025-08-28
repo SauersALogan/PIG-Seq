@@ -52,11 +52,13 @@ def create_expression_matrix(normalized_files, output_file="expression_matrix.tx
         sample_name = os.path.basename(file_path).split('_')[0]
         sample_names.append(sample_name)
         df['gene_id'] = df.apply(create_gene_identifier, axis=1)
+        print(f"DEBUG: Sample {sample_name} loaded {len(df)} genes")
         sample_data = df[['gene_id', 'binning', 'product', 'Length', 'TPM']].copy()
         sample_data['sample'] = sample_name
         all_sample_data.append(sample_data)
         print(f"Loaded {len(df)} genes from {sample_name}")
     combined_data = pd.concat(all_sample_data, ignore_index=True)
+    print(f"DEBUG: Combined data shape: {combined_data.shape}, unique gene_ids: {combined_data['gene_id'].nunique()}")
     if discard_unique_hypotheticals:
         hyp_genes = combined_data[combined_data['product'] == 'hypothetical protein']
         gene_counts = hyp_genes['gene_id'].value_counts()
@@ -65,6 +67,7 @@ def create_expression_matrix(normalized_files, output_file="expression_matrix.tx
         shared_hyp_data = hyp_genes.merge(shared_hyp[['binning', 'Length']], on = ['binning', 'Length'])
         annotated_genes = combined_data[combined_data['product'] != 'hypothetical protein']
         filtered_data = pd.concat([annotated_genes, shared_hyp_data], ignore_index = True)
+        print(f"DEBUG: Filtered data shape: {filtered_data.shape}, unique gene_ids: {filtered_data['gene_id'].nunique()}")
         print(f"Kept {len(annotated_genes['gene_id'].unique())} unique annotated genes")
         print(f"Kept {shared_hyp_data[['binning','Length']].drop_duplicates().shape[0]} shared hypothetical proteins (found in ≥ 2 samples)")
         print(f"Discarded {hyp_genes[['binning','Length']].drop_duplicates().shape[0] - shared_hyp_data[['binning','Length']].drop_duplicates().shape[0]} unique hypothetical proteins")
@@ -173,26 +176,26 @@ def normalized_sample_files(temp_test_dir):
 
     # Sample 1 data
     sample1_content = """Geneid	Chr	Start	End	Strand	Length	Sample1_mapped.sam	binning	CPM	RPK	TPM	product
-PROKKA_00001	Contig00001	149	1174	+	1026	201	Bin1.fa		5.07	195.90	4.79	tRNA-specific adenosine deaminase
-PROKKA_00002	Contig00001	1327	2295	+	969	190	Bin1.fa		4.79	196.08	4.80	hypothetical protein
-PROKKA_00003	Contig00001	2653	3135	-	483	75	Bin2.fa		1.89	155.28	3.80	hypothetical protein
+PROKKA_00001	Contig00001	149	1174	+	1026	201	Bin1.fa	5.07	195.90	4.79	tRNA-specific adenosine deaminase
+PROKKA_00002	Contig00001	1327	2295	+	969	190	Bin1.fa	4.79	196.08	4.80	hypothetical protein
+PROKKA_00003	Contig00001	2653	3135	-	483	75	Bin2.fa	1.89	155.28	3.80	hypothetical protein
 PROKKA_00004	Contig00002	100	800	+	701	120	unbinned	3.02	171.18	4.19	DNA polymerase
 """
 
     # Sample 2 data - same functions, different PROKKA IDs and coordinates
     sample2_content = """Geneid	Chr	Start	End	Strand	Length	Sample2_mapped.sam	binning	CPM	RPK	TPM	product
-PROKKA_00008	Contig00001	200	1300	+	1101	180	Bin1.fa		4.50	163.49	4.20	tRNA-specific adenosine deaminase
-PROKKA_00009	Contig00001	1500	2400	+	901	165	Bin2.fa		4.12	183.13	4.70	hypothetical protein
-PROKKA_00010	Contig00001	3000	3400	-	401	75	Bin2.fa		2.37	236.91	6.08	hypothetical protein
+PROKKA_00008	Contig00001	200	1300	+	1101	180	Bin1.fa	4.50	163.49	4.20	tRNA-specific adenosine deaminase
+PROKKA_00009	Contig00001	1500	2400	+	901	165	Bin2.fa	4.12	183.13	4.70	hypothetical protein
+PROKKA_00010	Contig00001	3000	3400	-	401	75	Bin2.fa	2.37	236.91	6.08	hypothetical protein
 PROKKA_00011	Contig00002	500	1200	+	701	140	unbinned	3.50	199.72	5.13	DNA polymerase
 """
 
     # Sample 3 data
     sample3_content = """Geneid	Chr	Start	End	Strand	Length	Sample3_mapped.sam	binning	CPM	RPK	TPM	product
-PROKKA_00015	Contig00001	300	1400	+	1101	220	Bin1.fa		5.50	199.82	5.10	tRNA-specific adenosine deaminase
-PROKKA_00016	Contig00001	1600	2100	+	501	85	Bin2.fa		2.12	169.66	4.33	hypothetical protein
+PROKKA_00015	Contig00001	300	1400	+	1101	220	Bin1.fa	5.50	199.82	5.10	tRNA-specific adenosine deaminase
+PROKKA_00016	Contig00001	1600	2100	+	501	85	Bin2.fa	2.12	169.66	4.33	hypothetical protein
 PROKKA_00017	Contig00002	200	900	+	701	160	unbinned	4.00	228.25	5.83	DNA polymerase
-PROKKA_00018	Contig00003	100	2000	-	1901	75	Bin3.fa		7.00	147.29	3.76	hypothetical
+PROKKA_00018	Contig00003	100	2000	-	1901	75	Bin3.fa	7.00	147.29	3.76	hypothetical
 """
 
     sample_files = []
