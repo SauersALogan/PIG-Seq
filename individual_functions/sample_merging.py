@@ -18,6 +18,7 @@ import re
 import shutil
 import sys
 import numpy as np
+import glob
 
 # =============================================================================
 # Import utility functions
@@ -87,10 +88,75 @@ def run_sample_merging(input_files, output_directory="./"):
     """
     Run the sample merging pipeline on multiple input formats
     """
-    # TODO: Handle different input formats (files vs directory)
-    # TODO: Call create_expression_matrix
-    # TODO: Generate summary statistics
-    # TODO: Return output path
+    normalized_files = []
+    for pattern in input_files:
+        if os.path.isdir(pattern):
+            normalized_files.extend(glob.glob(os.path.join(pattern, "*_normalized.txt")))
+            normalized_files.extend(glob.glob(os.path.join(pattern, "*normalized*.txt")))
+        else:
+            expanded = glob.glob(pattern)
+            if expanded:
+                normalized_files.extend(expanded)
+            else:
+                print(f"Warning: No files found for pattern: {pattern}")
+    normalized_files = sorted(list(set(normalized_files))) # Remove duplicates just in case glob acts funny
+    if not normalized_files:
+        print("ERROR: No normalized sample files found")
+        return None
+    print(f"Found {len(normalized_files)} normalized sample files:")
+    for file in normalized_files:
+        print(f" - {file}")
+    os.makedirs(output_directory, exist_ok=True)
+    output_file = os.path.join(output_directory, "expression_matrix.txt")
+    print(f"\nCreating expression matrix...")
+    matrix = create_expression_matrix(
+        normalized_files,
+        output_file,
+        discard_unique_hypotheticals=discard_unique_hypotheticals)
+    if matrix is None:
+        print("ERROR: Failed to create expression matrix")
+        return None
+    print(f"\n=== EXPRESSION MATRIX SUMMARY ===")
+    print(f"Output file: {output_file}")
+    print(f"Matrix dimensions: {matrix.shape}")
+    sample_cols = [col for col in matrix.columns if col not in ['binning', 'product', 'gene_id', 'total']]
+    print(f"Samples included: {len(sample_cols)}")
+    print(f"Sample names: {', '.join(sample_cols)}")
+    total_genes = len(matrix)
+    annotated_genes = len(matrix[matrix['product'] != 'hypothetical protein'])
+    hypothetical_genes = total_genes - annotated_genes
+    print(f"Total gene functions: {total_genes}")
+    print(f"Annotated functions: {annotated_genes}")
+    print(f"Hypothetical proteins: {hypothetical_genes}")
+    bins = matrix['binning'].unique()
+    print(f"Bins represented: {len(bins)}")
+    total_tpm = matrix['total'].sum()
+    print(f"Total TPM across all genes: {total_tpm:.2f}")
+    return output_file
+
+# =============================================================================
+# Command line interfacing
+# =============================================================================
+if __name__ == "__main__":
+
+    parser = argparse.ArgumentParser(description="Merge normalized sample files into expression matrix")
+    parser.add_argument("--input_files", nargs="+", required=True,
+        help="Normalized sample files or directories containing them")
+    parser.add_argument("--output", default="./",
+        help="Output directory (default: current directory)")
+    parser.add_argument("--keep_unique_hypotheticals", action="store_true",
+        help="Keep hypothetical proteins found in only some samples (default: discard)")
+
+    args = parser.parse_args()
+
+    result = run_sample_merging(args.input_files,
+        args.output,
+        discard_unique_hypotheticals=not args.keep_unique_hypotheticals)
+    if result:
+        print(f"\nExpression matrix successfully created: {result}")
+    else:
+        print("\nFailed to create expression matrix")
+        exit(1)
 
 # =============================================================================
 # Create the mock data for testing
@@ -165,31 +231,18 @@ def test_gene_categorization():
         'Length': 1000
     })
     assert create_gene_identifier(row_annotated) == "Bin1.fa|DNA polymerase"
+    print(f"Test categorizer produced the following annotations {row_annotated}")
     row_hypothetical = pd.Series({
         'binning': 'Bin1.fa',
         'product': 'hypothetical protein',
         'Length': 969
     })
     assert create_gene_identifier(row_hypothetical) == "Bin1.fa|hypothetical|969"
-
-def test_single_sample_processing(normalized_sample_files):
-    """Test processing of a single normalized sample file"""
-    # TODO: Test loading and categorizing genes from one file
-    pass
-
-def test_expression_matrix_creation(normalized_sample_files, expected_matrix_output):
-    """Test creation of expression matrix from multiple samples"""
-    # TODO: Test full matrix creation pipeline
-    # TODO: Compare with expected output
-    # TODO: Verify TPM summation properties
-    pass
+    print(f"Test categorizer produced the following hypotheticals {row_hypothetical}")
 
 def test_run_sample_merging(normalized_sample_files):
     """Test the main sample merging function"""
-    # TODO: Test the main pipeline function
-    # TODO: Verify output file creation
-    # TODO: Test summary statistics
-    pass
+    
 
 @pytest.fixture(autouse=True)
 def cleanup_files(request):
