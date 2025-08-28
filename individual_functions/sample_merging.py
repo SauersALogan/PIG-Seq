@@ -240,9 +240,32 @@ def test_gene_categorization():
     assert create_gene_identifier(row_hypothetical) == "Bin1.fa|hypothetical|969"
     print(f"Test categorizer produced the following hypotheticals {row_hypothetical}")
 
-def test_run_sample_merging(normalized_sample_files):
-    """Test the main sample merging function"""
-    
+def test_run_sample_merging_file_list(normalized_sample_files):
+    """Test run_sample_merging with list of file paths"""
+    output_dir = "test_output"
+    result_file = run_sample_merging(normalized_sample_files, output_dir)
+    assert result_file is not None, "Should return output file path"
+    assert os.path.exists(result_file), "Output file should be created"
+    assert result_file.startswith(output_dir), "Output should be in specified directory"
+    matrix = pd.read_csv(result_file, sep='\t')
+    assert len(matrix) > 0, "Matrix should contain data"
+    assert 'binning' in matrix.columns, "Should have binning column"
+    assert 'product' in matrix.columns, "Should have product column"
+    print(f"File list test passed: {matrix.shape[0]} genes, {matrix.shape[1]-4} samples")
+
+def test_run_sample_merging_directory(normalized_sample_files, temp_test_dir):
+    """Test run_sample_merging with directory input"""
+    for i, sample_file in enumerate(normalized_sample_files):
+        dest_file = os.path.join(temp_test_dir, f"sample_{i+1}_normalized.txt")
+        import shutil
+        shutil.copy(sample_file, dest_file)
+    result_file = run_sample_merging([temp_test_dir], "test_output_dir")
+    assert result_file is not None, "Should return output file path"
+    assert os.path.exists(result_file), "Output file should be created"
+    matrix = pd.read_csv(result_file, sep='\t')
+    assert len(matrix) > 0, "Matrix should contain data"
+    print(f"Directory test passed: {matrix.shape[0]} genes, {matrix.shape[1]-4} samples")
+
 
 @pytest.fixture(autouse=True)
 def cleanup_files(request):
