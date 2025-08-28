@@ -33,10 +33,13 @@ def create_gene_identifier(row):
     """
     Create unique identifier for cross-sample gene matching
     """
+    product = row['product']
+    if pd.isna(product):
+        product = 'unknown'
     if row['product'] == 'hypothetical protein':
         return f"{row['binning']}|hypothetical|{row['Length']}"
     else:
-        return f"{row['binning']}|{row['product'].strip()}"
+        return f"{row['binning']}|{str(product).strip()}"
 
 def create_expression_matrix(normalized_files, output_file="expression_matrix.txt", discard_unique_hypotheticals=True):
     """
@@ -57,22 +60,18 @@ def create_expression_matrix(normalized_files, output_file="expression_matrix.tx
     if discard_unique_hypotheticals:
         hyp_genes = combined_data[combined_data['product'] == 'hypothetical protein']
         gene_counts = hyp_genes['gene_id'].value_counts()
-        universal_hyp_genes = gene_counts[gene_counts == len(normalized_files)].index
+        hyp_groups =(hyp_genes.groupby(['binning', 'Length'])['sample'].nunique().reset_index(name='sample_count'))
+        shared_hyp = hyp_groups[hyp_groups['sample_count'] > 1]
+        shared_hyp_data = hyp_genes.merge(shared_hyp[['binning', 'Length']], on = ['binning', 'Length'])
         annotated_genes = combined_data[combined_data['product'] != 'hypothetical protein']
-        universal_hyp_data = combined_data[combined_data['gene_id'].isin(universal_hyp_genes)]
-        filtered_data = pd.concat([annotated_genes, universal_hyp_data], ignore_index=True)
+        filtered_data = pd.concat([annotated_genes, shared_hyp_data], ignore_index = True)
         print(f"Kept {len(annotated_genes['gene_id'].unique())} unique annotated genes")
-        print(f"Kept {len(universal_hyp_genes)} universally matched hypothetical proteins")
-        print(f"Discarded {len(gene_counts) - len(universal_hyp_genes)} unique hypothetical proteins")
+        print(f"Kept {shared_hyp_data[['binning','Length']].drop_duplicates().shape[0]} shared hypothetical proteins (found in ≥ 2 samples)")
+        print(f"Discarded {hyp_genes[['binning','Length']].drop_duplicates().shape[0] - shared_hyp_data[['binning','Length']].drop_duplicates().shape[0]} unique hypothetical proteins")
     else:
         filtered_data = combined_data
-    matrix = filtered_data.pivot_table(
-        index=['binning', 'product', 'gene_id'],
-        columns='sample',
-        values='TPM',
-        fill_value=0,
-        aggfunc='sum'
-    ).reset_index()
+    matrix = filtered_data.pivot_table(index=['binning', 'product'], columns='sample', values='TPM',
+        aggfunc='sum').reset_index()
     sample_columns = [col for col in matrix.columns if col in sample_names]
     matrix['total'] = matrix[sample_columns].sum(axis=1)
     matrix = matrix.sort_values(['binning', 'total'], ascending=[True, False])
@@ -84,7 +83,7 @@ def create_expression_matrix(normalized_files, output_file="expression_matrix.tx
     print(f"Bins represented: {matrix['binning'].nunique()}")
     return matrix
 
-def run_sample_merging(input_files, output_directory="./"):
+def run_sample_merging(input_files, output_directory="./", discard_unique_hypotheticals=True):
     """
     Run the sample merging pipeline on multiple input formats
     """
@@ -184,7 +183,7 @@ PROKKA_00004	Contig00002	100	800	+	701	120	unbinned	3.02	171.18	4.19	DNA polymer
     sample2_content = """Geneid	Chr	Start	End	Strand	Length	Sample2_mapped.sam	binning	CPM	RPK	TPM	product
 PROKKA_00008	Contig00001	200	1300	+	1101	180	Bin1.fa		4.50	163.49	4.20	tRNA-specific adenosine deaminase
 PROKKA_00009	Contig00001	1500	2400	+	901	165	Bin2.fa		4.12	183.13	4.70	hypothetical protein
-PROKKA_00010	Contig00001	3000	3400	-	401	95	Bin2.fa		2.37	236.91	6.08	hypothetical protein
+PROKKA_00010	Contig00001	3000	3400	-	401	75	Bin2.fa		2.37	236.91	6.08	hypothetical protein
 PROKKA_00011	Contig00002	500	1200	+	701	140	unbinned	3.50	199.72	5.13	DNA polymerase
 """
 
@@ -193,7 +192,7 @@ PROKKA_00011	Contig00002	500	1200	+	701	140	unbinned	3.50	199.72	5.13	DNA polyme
 PROKKA_00015	Contig00001	300	1400	+	1101	220	Bin1.fa		5.50	199.82	5.10	tRNA-specific adenosine deaminase
 PROKKA_00016	Contig00001	1600	2100	+	501	85	Bin2.fa		2.12	169.66	4.33	hypothetical protein
 PROKKA_00017	Contig00002	200	900	+	701	160	unbinned	4.00	228.25	5.83	DNA polymerase
-PROKKA_00018	Contig00003	100	2000	-	1901	280	Bin3.fa		7.00	147.29	3.76	Ferrienterobactin receptor
+PROKKA_00018	Contig00003	100	2000	-	1901	75	Bin3.fa		7.00	147.29	3.76	hypothetical
 """
 
     sample_files = []
