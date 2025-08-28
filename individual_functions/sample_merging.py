@@ -198,7 +198,7 @@ PROKKA_00018	Contig00003	100	2000	-	1901	280	Bin3.fa		7.00	147.29	3.76	Ferriente
 
     sample_files = []
     for i, content in enumerate([sample1_content, sample2_content, sample3_content], 1):
-        sample_file = os.path.join(temp_test_dir, f'S2{i}_Pos_mapped_binned_normalized.txt')
+        sample_file = os.path.join(temp_test_dir, f'Sample{i}_mapped_binned_normalized.txt')
         with open(sample_file, 'w') as f:
             f.write(content)
         sample_files.append(sample_file)
@@ -242,7 +242,7 @@ def test_gene_categorization():
 
 def test_run_sample_merging_file_list(normalized_sample_files):
     """Test run_sample_merging with list of file paths"""
-    output_dir = "test_output"
+    output_dir = "./"
     result_file = run_sample_merging(normalized_sample_files, output_dir)
     assert result_file is not None, "Should return output file path"
     assert os.path.exists(result_file), "Output file should be created"
@@ -259,7 +259,7 @@ def test_run_sample_merging_directory(normalized_sample_files, temp_test_dir):
         dest_file = os.path.join(temp_test_dir, f"sample_{i+1}_normalized.txt")
         import shutil
         shutil.copy(sample_file, dest_file)
-    result_file = run_sample_merging([temp_test_dir], "test_output_dir")
+    result_file = run_sample_merging([temp_test_dir], "./")
     assert result_file is not None, "Should return output file path"
     assert os.path.exists(result_file), "Output file should be created"
     matrix = pd.read_csv(result_file, sep='\t')
