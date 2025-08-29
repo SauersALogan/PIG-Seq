@@ -90,11 +90,12 @@ def run_sample_merging(input_files, output_directory="./", discard_unique_hypoth
     """
     Run the sample merging pipeline on multiple input formats
     """
+    required_columns = {}
     normalized_files = []
     for pattern in input_files:
         if os.path.isdir(pattern):
-            normalized_files.extend(glob.glob(os.path.join(pattern, "*_normalized.txt")))
-            normalized_files.extend(glob.glob(os.path.join(pattern, "*normalized*.txt")))
+            files = glob.glob(os.path.join(pattern, "*.txt"))
+            normalized_files.extend(files)
         else:
             expanded = glob.glob(pattern)
             if expanded:
