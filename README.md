@@ -1,2 +1,4 @@
 # PIG-Seq
-Self developed custom scripts for mapping transcriptomic and metagenomic reads to dereplicated bin sets in assembly context.
+Self developed custom scripts with the goal of parsing and transforming features from featureCount output into transcript per millions (tpm) and associating these features with specific bins from a nonredundant bin set. To accomplish this, reads from a sample should be mapped to that samples metagenomic assembly and then the resulting .sam file, the assembly .fasta, the nonredundant bin .fasta files, and the assembly annotation .gff file serve as inputs for the pipeline. The pipeline will then align the contigs to bins using minimap2, identify good hits and assigning the contigs to bins using the PAF_parsing.py script. It then calculates the counts for each feature in the .sam file using featureCounts and assigns these counts to either a bin or if the contig did not map to the unbinned category using the feature_parsing.py
+
+The end result is feature table which includes the gene product, what bin from the nonredundant bin set the genes contig mapped to, and the tpm of the gene. 
